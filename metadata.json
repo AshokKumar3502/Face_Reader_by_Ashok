@@ -1,0 +1,8 @@
+{
+  "name": "Serene",
+  "description": "Your daily emotional mirror. A supportive AI mentor that helps you find balance.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
