@@ -39,7 +39,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         updateSettings({ reminderEnabled: true });
       } else {
         alert("Notifications are blocked. Please enable them in your browser settings to receive reminders.");
-        // We do not enable the setting if permission is denied
       }
     } else {
       // Trying to disable
@@ -49,6 +48,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateSettings({ reminderTime: e.target.value });
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateSettings({ customApiKey: e.target.value });
   };
 
   const updateSettings = (updates: Partial<UserSettings>) => {
@@ -71,9 +74,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="w-full max-w-md animate-fade-in pb-10">
+    <div className="w-full max-w-md animate-fade-in pb-10 px-4 sm:px-0">
       
-      {/* CSS Hack for Dark Mode Time Input */}
       <style>{`
         input[type="time"]::-webkit-calendar-picker-indicator {
           filter: invert(1);
@@ -81,73 +83,114 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         }
       `}</style>
 
-      <div className="flex justify-between items-end mb-10 border-b border-white/5 pb-6">
+      <div className="flex justify-between items-end mb-8 border-b border-white/5 pb-6">
         <div>
-           <h2 className="text-3xl font-serif-display text-white">Settings</h2>
-           <p className="text-zinc-500 text-sm mt-1">Customize your experience</p>
+           <h2 className="text-3xl font-serif-display text-white italic">Settings</h2>
+           <p className="text-zinc-500 text-xs mt-1 uppercase tracking-widest font-black">Architecture & Signal</p>
         </div>
-        <button onClick={onBack} className="text-sm font-medium text-zinc-500 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">Close</button>
+        <button onClick={onBack} className="text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">Back</button>
       </div>
 
-      <div className="bg-zinc-900/40 backdrop-blur-xl rounded-[2rem] p-8 border border-white/5 space-y-10">
+      <div className="space-y-6">
         
-        {/* Reminder Toggle */}
-        <div className="flex items-center justify-between cursor-pointer" onClick={handleToggle}>
-          <div>
-            <h3 className="text-zinc-200 font-medium text-lg">Daily Reminder</h3>
-            <p className="text-zinc-500 text-xs mt-1">Receive a gentle nudge to check in.</p>
-          </div>
-          <button 
-            type="button"
-            className={`w-14 h-8 rounded-full transition-all duration-300 relative shadow-inner flex-shrink-0 ${settings.reminderEnabled ? 'bg-teal-500/20 border border-teal-500' : 'bg-zinc-800 border border-zinc-700'}`}
-          >
-            <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all duration-300 shadow-lg ${settings.reminderEnabled ? 'left-7 bg-teal-50' : 'left-1'}`}></div>
-          </button>
+        {/* API CONFIGURATION - RESTORED */}
+        <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl overflow-hidden relative group">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-colors"></div>
+           
+           <h3 className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+             AI Configuration
+           </h3>
+           
+           <div className="space-y-4">
+              <p className="text-zinc-400 text-[10px] leading-relaxed">
+                 To mirror your soul, Kosha requires a connection to the Gemini Intelligence Network.
+              </p>
+              
+              <div className="relative">
+                 <input 
+                   type="password" 
+                   value={settings.customApiKey || ''}
+                   onChange={handleApiKeyChange}
+                   placeholder="Enter Gemini API Key..."
+                   className="w-full bg-black/60 text-white px-5 py-4 rounded-2xl border border-white/5 focus:outline-none focus:border-indigo-500/50 transition-all text-sm font-mono placeholder-zinc-700 shadow-inner"
+                 />
+                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                 </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                 <a 
+                   href="https://ai.google.dev/" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="text-[9px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5"
+                 >
+                   Get Key from Google
+                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                   </svg>
+                 </a>
+                 <div className="text-[9px] text-zinc-600 font-bold uppercase">Signal: {settings.customApiKey ? 'Ready' : 'Waiting'}</div>
+              </div>
+           </div>
         </div>
 
-        {/* Time Picker */}
-        <div className={`transition-all duration-500 ease-in-out overflow-hidden ${settings.reminderEnabled ? 'opacity-100 max-h-48' : 'opacity-40 max-h-48 grayscale pointer-events-none'}`}>
-          <label className="block text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-3">
-             {settings.reminderEnabled ? "Preferred Time" : "Enable reminders to set time"}
-          </label>
-          <div className="relative group">
-             {/* The Input */}
-             <input 
-              type="time" 
-              value={settings.reminderTime}
-              onChange={handleTimeChange}
-              disabled={!settings.reminderEnabled}
-              className="w-full bg-black/40 text-white p-6 rounded-2xl border border-white/10 focus:outline-none focus:border-teal-500/50 focus:bg-black/60 text-3xl font-serif-display transition-all cursor-pointer shadow-inner"
-             />
-             
-             {/* Decorator Icon for visual cue */}
-             <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 group-hover:text-white transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                   <circle cx="12" cy="12" r="10"></circle>
-                   <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
+        {/* NOTIFICATION SETTINGS */}
+        <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl">
+           <div className="flex items-center justify-between mb-8">
+             <div>
+                <h3 className="text-zinc-200 font-bold text-sm uppercase tracking-widest">Reminders</h3>
+                <p className="text-zinc-500 text-[10px] mt-1">Daily notification frequency</p>
              </div>
-          </div>
-          <p className="text-zinc-600 text-[10px] mt-3 text-center">
-             We will send a browser notification at this time.
-          </p>
+             <button 
+               onClick={handleToggle}
+               className={`w-12 h-6 rounded-full transition-all duration-300 relative ${settings.reminderEnabled ? 'bg-emerald-500/20 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-zinc-800 border border-zinc-700'}`}
+             >
+               <div className={`absolute top-1 w-3.5 h-3.5 rounded-full transition-all duration-300 ${settings.reminderEnabled ? 'left-7 bg-emerald-50 shadow-[0_0_10px_white]' : 'left-1 bg-zinc-600'}`}></div>
+             </button>
+           </div>
+
+           <div className={`transition-all duration-500 overflow-hidden ${settings.reminderEnabled ? 'opacity-100 max-h-48 translate-y-0' : 'opacity-20 max-h-0 translate-y-4 pointer-events-none'}`}>
+              <div className="relative group">
+                 <input 
+                  type="time" 
+                  value={settings.reminderTime}
+                  onChange={handleTimeChange}
+                  disabled={!settings.reminderEnabled}
+                  className="w-full bg-black/40 text-white p-6 rounded-2xl border border-white/5 focus:outline-none focus:border-emerald-500/30 text-4xl font-serif-display transition-all cursor-pointer shadow-inner text-center"
+                 />
+                 <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-700">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                       <circle cx="12" cy="12" r="10"></circle>
+                       <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                 </div>
+              </div>
+              <button 
+                onClick={sendTestNotification}
+                className="w-full mt-6 py-3 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
+              >
+                Pulse Test
+              </button>
+           </div>
         </div>
 
-        {/* Test Button */}
-        <div className={`transition-all duration-300 ${settings.reminderEnabled ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-           <Button variant="ghost" onClick={sendTestNotification} className="w-full text-xs py-3 border border-white/5 hover:bg-white/5">
-             Test Notification
-           </Button>
+        {/* FOOTER */}
+        <div className="pt-10 text-center space-y-4">
+           <div className="h-px w-12 bg-white/10 mx-auto"></div>
+           <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 font-black">Architected by Ashok</p>
+           <p className="text-zinc-800 text-[9px] leading-relaxed max-w-[200px] mx-auto uppercase tracking-widest font-bold opacity-60">
+             Privacy Protocol Active.<br/>Neural patterns remain local.
+           </p>
         </div>
       </div>
-
-      <div className="mt-12 text-center">
-         <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mb-2">Developed by Ashok</p>
-         <p className="text-zinc-700 text-[10px] opacity-60">
-           Data is stored locally on your device. We do not track you.
-         </p>
-      </div>
-
     </div>
   );
 };
