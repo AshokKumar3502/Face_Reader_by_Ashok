@@ -12,12 +12,12 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props 
 }) => {
-  const baseStyle = "relative overflow-hidden py-4 px-8 rounded-2xl text-sm font-medium transition-all duration-200 transform active:scale-[0.98] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed group";
+  const baseStyle = "relative overflow-hidden py-4 px-8 rounded-2xl text-sm font-bold tracking-wide transition-all duration-300 transform active:scale-[0.96] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed group";
   
   const variants = {
-    primary: "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.1)]",
-    secondary: "bg-zinc-900/40 backdrop-blur-md border border-zinc-700/50 text-zinc-300 hover:text-white hover:bg-zinc-800/60 hover:border-zinc-600",
-    ghost: "text-zinc-500 hover:text-white bg-transparent hover:bg-white/5"
+    primary: "rainbow-gradient text-white shadow-[0_10px_30px_rgba(255,0,102,0.3)] hover:shadow-[0_15px_40px_rgba(0,204,255,0.4)] hover:-translate-y-0.5",
+    secondary: "bg-white/10 backdrop-blur-xl border border-white/20 text-white hover:bg-white/20 shadow-xl",
+    ghost: "text-zinc-300 hover:text-white bg-transparent hover:bg-white/5"
   };
 
   return (
@@ -25,12 +25,10 @@ export const Button: React.FC<ButtonProps> = ({
       className={`${baseStyle} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...props}
     >
-      {/* Shimmer Effect */}
-      {variant === 'primary' && (
-        <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent z-0 pointer-events-none"></div>
-      )}
+      {/* Gloss Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"></div>
       
-      <span className="relative z-10 flex items-center justify-center gap-2">
+      <span className="relative z-10 flex items-center justify-center gap-2 drop-shadow-md">
         {children}
       </span>
     </button>

@@ -94,11 +94,10 @@ export const VisionMode: React.FC<VisionModeProps> = ({ context, onCapture, onCa
 
   const getContextLabel = () => {
     switch(context) {
-        case 'WAKING_UP': return "Good Morning";
-        case 'WORK': return "Work Check-in";
-        case 'FAMILY': return "With Family";
-        case 'SOCIAL': return "With Friends";
-        case 'BEFORE_SLEEP': return "Before Sleep";
+        case 'WAKING_UP': return "Wake up";
+        case 'WORK': return "Work";
+        case 'EVENING': return "Evening";
+        case 'BEFORE_SLEEP': return "Going to sleep";
     }
   }
 

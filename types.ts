@@ -10,7 +10,7 @@ export enum AppState {
   CHAT = 'CHAT'
 }
 
-export type UserContext = 'WAKING_UP' | 'WORK' | 'FAMILY' | 'SOCIAL' | 'BEFORE_SLEEP';
+export type UserContext = 'WAKING_UP' | 'WORK' | 'EVENING' | 'BEFORE_SLEEP';
 
 export interface InsightData {
   psychProfile: string;    // Deep observation

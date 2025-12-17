@@ -66,14 +66,13 @@ const RESPONSE_SCHEMA = {
   required: ["psychProfile", "simpleExplanation", "relationshipImpact", "currentPattern", "growthPlan", "dailyAction", "emotionalScore"]
 };
 
-const modelName = 'gemini-2.5-flash';
+const modelName = 'gemini-3-flash-preview';
 
 // Helper to get the correct client instance
 const getAIClient = () => {
   const settings = getSettings();
   
   // Safe Environment Variable Access
-  // In pure browser environments (like Vercel static), 'process' might not be defined.
   let envKey = '';
   try {
     // @ts-ignore
@@ -85,7 +84,7 @@ const getAIClient = () => {
     // Ignore reference errors
   }
 
-  // Prioritize custom key, then env key. No hardcoded fallback.
+  // Prioritize custom key, then env key.
   const apiKey = settings.customApiKey || envKey;
   
   if (!apiKey) {
@@ -101,11 +100,10 @@ export const analyzeInput = async (
 ): Promise<InsightData> => {
   
   const contextMap: Record<UserContext, string> = {
-    'WAKING_UP': "Context: Just woke up.",
-    'WORK': "Context: At work.",
-    'FAMILY': "Context: With family.",
-    'SOCIAL': "Context: With friends.",
-    'BEFORE_SLEEP': "Context: Before bed."
+    'WAKING_UP': "Context: The user just woke up.",
+    'WORK': "Context: The user is at work.",
+    'EVENING': "Context: It is evening.",
+    'BEFORE_SLEEP': "Context: The user is going to sleep."
   };
 
   const promptText = `
@@ -125,7 +123,6 @@ export const analyzeInput = async (
   `;
 
   try {
-    // Initialize client dynamically to pick up latest settings
     const ai = getAIClient();
     const base64Data = image.split(',')[1] || image;
     
@@ -159,7 +156,6 @@ export const analyzeInput = async (
   } catch (error: any) {
     console.error("Kosha Connection Error:", error);
     
-    // Provide a helpful error message if it's an API key issue
     if (error.message?.includes('No API Key found') || error.message?.includes('API key') || error.toString().includes('403')) {
        return {
           psychProfile: "Key Configuration Error",
@@ -246,7 +242,6 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
   try {
     const ai = getAIClient();
     
-    // Format the history for the AI
     const historyText = entries.map(e => `
       Day ${e.dayNumber} (${e.context}): 
       Mood: ${e.insight.psychProfile}
