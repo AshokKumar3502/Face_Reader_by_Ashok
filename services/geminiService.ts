@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { InsightData, UserContext, ChatMessage } from "../types";
+import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
 import { getSettings } from "./storageService";
 
 // PROMPT ENGINEERING:
@@ -66,8 +66,6 @@ const RESPONSE_SCHEMA = {
   required: ["psychProfile", "simpleExplanation", "relationshipImpact", "currentPattern", "growthPlan", "dailyAction", "emotionalScore"]
 };
 
-// Fallback Key - Used if no custom key is provided
-const DEFAULT_API_KEY = 'AIzaSyB5K_AYfNec_pdlbVKzVL1U3WtDXX9hcHA';
 const modelName = 'gemini-2.5-flash';
 
 // Helper to get the correct client instance
@@ -87,8 +85,8 @@ const getAIClient = () => {
     // Ignore reference errors
   }
 
-  // Prioritize custom key, then env key (if any), then hardcoded fallback
-  const apiKey = settings.customApiKey || envKey || DEFAULT_API_KEY;
+  // Prioritize custom key, then env key. No hardcoded fallback.
+  const apiKey = settings.customApiKey || envKey;
   
   if (!apiKey) {
     throw new Error("No API Key found. Please add your key in Settings.");
@@ -162,10 +160,10 @@ export const analyzeInput = async (
     console.error("Serene Connection Error:", error);
     
     // Provide a helpful error message if it's an API key issue
-    if (error.message?.includes('API key') || error.toString().includes('403')) {
+    if (error.message?.includes('No API Key found') || error.message?.includes('API key') || error.toString().includes('403')) {
        return {
           psychProfile: "Key Configuration Error",
-          simpleExplanation: "The API Key seems to be invalid or expired. Please check your Key in Settings.",
+          simpleExplanation: "Serene needs an API Key to see you. Please add your key in Settings.",
           relationshipImpact: "None",
           currentPattern: "Auth Error",
           growthPlan: "Update your API Key in Settings.",
@@ -223,8 +221,73 @@ export const getChatResponse = async (
     });
 
     return response.text || "I am listening.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Chat Error:", error);
+    if (error.message?.includes('No API Key found')) {
+        return "Please configure your API Key in settings to chat.";
+    }
     return "I'm having trouble connecting right now. Please check your API Key in Settings or try again.";
+  }
+};
+
+export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
+  const WEEKLY_SCHEMA = {
+    type: Type.OBJECT,
+    properties: {
+      weekTitle: { type: Type.STRING, description: "A poetic title for the user's week." },
+      soulReport: { type: Type.STRING, description: "A deep, simple paragraph narrative about their emotional journey." },
+      emotionalTrend: { type: Type.STRING, description: "The dominant direction of their mood." },
+      keyRealization: { type: Type.STRING, description: "The hidden truth connecting their days." },
+      nextWeekMantra: { type: Type.STRING, description: "A short, powerful phrase for the future." }
+    },
+    required: ["weekTitle", "soulReport", "emotionalTrend", "keyRealization", "nextWeekMantra"]
+  };
+
+  try {
+    const ai = getAIClient();
+    
+    // Format the history for the AI
+    const historyText = entries.map(e => `
+      Day ${e.dayNumber} (${e.context}): 
+      Mood: ${e.insight.psychProfile}
+      Pattern: ${e.insight.currentPattern}
+      Score: ${e.insight.emotionalScore}
+    `).join('\n');
+
+    const prompt = `
+      Here is the user's emotional journal for the past week:
+      ${historyText}
+
+      TASK:
+      1. Analyze the timeline. How did they change from the start to the end?
+      2. Find the hidden story.
+      3. Write a "Soul Report" in SIMPLE, beautiful English. No jargon.
+      4. Give them a mantra for next week.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: { role: 'user', parts: [{ text: prompt }] },
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: WEEKLY_SCHEMA,
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text) as WeeklyInsight;
+    } else {
+      throw new Error("Empty response");
+    }
+  } catch (error) {
+    console.error("Weekly Analysis Error", error);
+    return {
+      weekTitle: "The Unfinished Week",
+      soulReport: "I cannot read the full story of your week right now. Please check your API Key settings.",
+      emotionalTrend: "Unknown",
+      keyRealization: "Keep recording to see the pattern.",
+      nextWeekMantra: "One day at a time."
+    };
   }
 };

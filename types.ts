@@ -22,6 +22,14 @@ export interface InsightData {
   emotionalScore: number;  // 0-100 (Peace/Balance level)
 }
 
+export interface WeeklyInsight {
+  weekTitle: string;       // e.g., "The Week of Hidden Courage"
+  soulReport: string;      // Narrative summary of the week
+  emotionalTrend: string;  // e.g., "Rising Anxiety", "Finding Peace"
+  keyRealization: string;  // The hidden truth connecting the days
+  nextWeekMantra: string;  // Simple phrase to carry forward
+}
+
 export interface JournalEntry {
   id: string;
   timestamp: number;
