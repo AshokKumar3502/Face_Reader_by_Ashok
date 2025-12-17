@@ -73,8 +73,22 @@ const modelName = 'gemini-2.5-flash';
 // Helper to get the correct client instance
 const getAIClient = () => {
   const settings = getSettings();
+  
+  // Safe Environment Variable Access
+  // In pure browser environments (like Vercel static), 'process' might not be defined.
+  let envKey = '';
+  try {
+    // @ts-ignore
+    if (typeof process !== 'undefined' && process.env) {
+       // @ts-ignore
+       envKey = process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignore reference errors
+  }
+
   // Prioritize custom key, then env key (if any), then hardcoded fallback
-  const apiKey = settings.customApiKey || process.env.API_KEY || DEFAULT_API_KEY;
+  const apiKey = settings.customApiKey || envKey || DEFAULT_API_KEY;
   
   if (!apiKey) {
     throw new Error("No API Key found. Please add your key in Settings.");
