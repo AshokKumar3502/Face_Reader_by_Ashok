@@ -6,6 +6,7 @@ import { InsightCard } from './components/InsightCard';
 import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
 import { ChatView } from './components/ChatView';
+import { LoadingScreen } from './components/LoadingScreen';
 import { AppState, InsightData, UserContext } from './types';
 import { analyzeInput } from './services/geminiService';
 import { saveEntry, getCurrentDay, shouldSendNotification, markNotificationSent } from './services/storageService';
@@ -82,8 +83,11 @@ const App: React.FC = () => {
          <div className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] bg-fuchsia-600/20 rounded-full blur-[100px] animate-pulse-slow mix-blend-screen"></div>
       </div>
 
+      {/* --- UNIQUE LOADING STATE --- */}
+      {appState === AppState.LOADING && <LoadingScreen />}
+
       {/* Header - Glassmorphism */}
-      {!isUtilityView && (
+      {!isUtilityView && appState !== AppState.LOADING && (
         <header className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-40 animate-fade-in">
           <div className="flex items-center gap-3">
              <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)] animate-pulse"></div>
@@ -108,7 +112,7 @@ const App: React.FC = () => {
       <main className="z-10 w-full max-w-lg flex flex-col items-center gap-8 min-h-[60vh] justify-center transition-all duration-500">
         
         {/* Visualizer - The Heart of the UI */}
-        {(appState === AppState.INTRO || appState === AppState.LOADING || appState === AppState.CONTEXT_SELECT || appState === AppState.CHAT) && (
+        {(appState === AppState.INTRO || appState === AppState.CONTEXT_SELECT || appState === AppState.CHAT) && (
           <div className={`mb-6 animate-fade-in pointer-events-none transform transition-all duration-700 ${appState === AppState.CHAT ? 'absolute top-20 opacity-30 scale-50' : ''}`}>
             <Visualizer state={getVisualizerState()} />
           </div>
@@ -195,15 +199,6 @@ const App: React.FC = () => {
             onCapture={handleAnalysis} 
             onCancel={() => setAppState(AppState.CONTEXT_SELECT)}
           />
-        )}
-
-        {/* --- STATE: LOADING --- */}
-        {appState === AppState.LOADING && (
-          <div className="text-center space-y-4 animate-fade-in">
-            <p className="text-xs uppercase tracking-[0.3em] text-white font-bold animate-pulse drop-shadow-glow">
-              Connecting to Kosha AI...
-            </p>
-          </div>
         )}
 
         {/* --- STATE: RESULT --- */}
