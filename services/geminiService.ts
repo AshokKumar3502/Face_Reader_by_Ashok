@@ -7,7 +7,7 @@ import { getSettings } from "./storageService";
 // It prioritizes simple, emotional language over clinical/medical accuracy in the text output.
 
 const SYSTEM_INSTRUCTION = `
-You are Serene, a warm, wise, and supportive AI companion.
+You are Kosha, a warm, wise, and supportive AI companion.
 Your goal is to look at the user and tell them how they are feeling using **extremely simple, everyday English**.
 
 **STRICT LANGUAGE RULES:**
@@ -154,16 +154,16 @@ export const analyzeInput = async (
     if (response.text) {
       return JSON.parse(response.text) as InsightData;
     } else {
-      throw new Error("Serene could not connect.");
+      throw new Error("Kosha could not connect.");
     }
   } catch (error: any) {
-    console.error("Serene Connection Error:", error);
+    console.error("Kosha Connection Error:", error);
     
     // Provide a helpful error message if it's an API key issue
     if (error.message?.includes('No API Key found') || error.message?.includes('API key') || error.toString().includes('403')) {
        return {
           psychProfile: "Key Configuration Error",
-          simpleExplanation: "Serene needs an API Key to see you. Please add your key in Settings.",
+          simpleExplanation: "Kosha needs an API Key to see you. Please add your key in Settings.",
           relationshipImpact: "None",
           currentPattern: "Auth Error",
           growthPlan: "Update your API Key in Settings.",

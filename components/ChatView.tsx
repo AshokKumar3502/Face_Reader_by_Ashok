@@ -74,8 +74,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ insight, onBack }) => {
             <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></div>
           </div>
           <div>
-            <h3 className="text-white font-serif-display text-sm">Serene</h3>
-            <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Psychologist</p>
+            <h3 className="text-white font-serif-display text-sm">Kosha</h3>
+            <p className="text-zinc-500 text-[10px] uppercase tracking-widest">Your Soul Mirror</p>
           </div>
         </div>
         <button onClick={onBack} className="text-zinc-400 hover:text-white transition-colors text-xs font-bold px-3 py-1 rounded-lg hover:bg-white/5">

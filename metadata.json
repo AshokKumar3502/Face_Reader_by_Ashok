@@ -1,6 +1,6 @@
 {
-  "name": "Serene",
-  "description": "Your daily emotional mirror. A supportive AI mentor that helps you find balance.",
+  "name": "Kosha",
+  "description": "The mirror to your soul. Your daily emotional journal.",
   "requestFramePermissions": [
     "camera",
     "microphone"

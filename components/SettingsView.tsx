@@ -69,7 +69,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     if (!('Notification' in window)) return;
     
     if (Notification.permission === 'granted') {
-      new Notification("Serene", {
+      new Notification("Kosha", {
         body: "This is how your daily reminder will look.",
         icon: "/favicon.ico"
       });
@@ -190,10 +190,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="mt-12 text-center opacity-40 hover:opacity-100 transition-opacity duration-300">
-         <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mb-2">Privacy First</p>
-         <p className="text-zinc-600 text-xs px-8 leading-relaxed max-w-xs mx-auto">
-           Data is stored locally on your device.<br/>We do not track you.
+      <div className="mt-12 text-center">
+         <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mb-2">Developed by Ashok</p>
+         <p className="text-zinc-700 text-[10px] opacity-60">
+           Data is stored locally on your device. We do not track you.
          </p>
       </div>
 

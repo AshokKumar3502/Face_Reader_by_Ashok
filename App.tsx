@@ -23,7 +23,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkNotification = () => {
       if (shouldSendNotification() && Notification.permission === 'granted') {
-        new Notification("Serene", {
+        new Notification("Kosha", {
           body: "It is time to check in with yourself. How are you feeling right now?",
           icon: "/favicon.ico"
         });
@@ -87,7 +87,7 @@ const App: React.FC = () => {
         <header className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-40 animate-fade-in">
           <div className="flex items-center gap-3">
              <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)] animate-pulse"></div>
-             <span className="font-serif-display tracking-[0.2em] text-white text-sm font-bold drop-shadow-md">SERENE</span>
+             <span className="font-serif-display tracking-[0.2em] text-white text-sm font-bold drop-shadow-md">KOSHA</span>
           </div>
           
           <div className="flex items-center gap-4">
@@ -116,7 +116,7 @@ const App: React.FC = () => {
 
         {/* --- INTRO --- */}
         {appState === AppState.INTRO && (
-          <div className="text-center animate-slide-up space-y-12 w-full max-w-sm">
+          <div className="text-center animate-slide-up space-y-12 w-full max-w-sm relative">
             <div>
               <h1 className="text-5xl md:text-6xl font-serif-display text-white mb-6 leading-tight drop-shadow-2xl tracking-tight">
                 Know<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-indigo-300">Yourself.</span>
@@ -133,6 +133,10 @@ const App: React.FC = () => {
               <Button onClick={() => setAppState(AppState.HISTORY)} variant="ghost" className="w-full text-zinc-400 hover:text-white">
                 Open Journal
               </Button>
+            </div>
+
+            <div className="absolute -bottom-24 left-0 right-0">
+               <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-medium opacity-60">Developed by Ashok</p>
             </div>
           </div>
         )}
@@ -197,7 +201,7 @@ const App: React.FC = () => {
         {appState === AppState.LOADING && (
           <div className="text-center space-y-4 animate-fade-in">
             <p className="text-xs uppercase tracking-[0.3em] text-white font-bold animate-pulse drop-shadow-glow">
-              Connecting to Serene AI...
+              Connecting to Kosha AI...
             </p>
           </div>
         )}

@@ -106,7 +106,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
       <div className="mt-8 flex flex-col gap-3">
         {onChat && !readonly && (
           <Button onClick={onChat} fullWidth className="bg-indigo-500/20 hover:bg-indigo-500/30 border-indigo-500/30 text-indigo-100 shadow-[0_0_20px_rgba(99,102,241,0.15)]">
-             Chat with Serene about this
+             Chat with Kosha about this
           </Button>
         )}
         <Button onClick={onReset} variant="secondary" fullWidth className="border-white/20 bg-white/5 hover:bg-white/10 text-white">
