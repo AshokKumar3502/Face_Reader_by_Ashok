@@ -73,7 +73,7 @@ const App: React.FC = () => {
   const isUtilityView = appState === AppState.HISTORY || appState === AppState.SETTINGS;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
       
       {/* Hyper-Saturated Ambient Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -85,61 +85,61 @@ const App: React.FC = () => {
       {/* --- UNIQUE LOADING STATE --- */}
       {appState === AppState.LOADING && <LoadingScreen />}
 
-      {/* Header - Transparent High Visibility */}
+      {/* Header - Adaptive Positioning */}
       {!isUtilityView && appState !== AppState.LOADING && (
-        <header className="absolute top-0 left-0 right-0 p-10 flex justify-between items-center z-40 animate-fade-in">
-          <div className="flex items-center gap-4">
-             <div className="w-4 h-4 bg-white rounded-full shadow-[0_0_20px_white] animate-pulse"></div>
-             <span className="font-serif-display tracking-[0.4em] text-white text-lg font-black drop-shadow-xl">KOSHA</span>
+        <header className="absolute top-0 left-0 right-0 p-6 sm:p-8 md:p-10 flex justify-between items-center z-40 animate-fade-in">
+          <div className="flex items-center gap-3 sm:gap-4">
+             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-[0_0_15px_white] animate-pulse"></div>
+             <span className="font-serif-display tracking-[0.3em] sm:tracking-[0.4em] text-white text-base sm:text-lg font-black drop-shadow-xl">KOSHA</span>
           </div>
           
-          <div className="flex items-center gap-5">
-             <button onClick={() => setAppState(AppState.SETTINGS)} className="w-12 h-12 rounded-2xl border-2 border-white/20 bg-white/10 backdrop-blur-xl flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all shadow-2xl">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex items-center gap-3 sm:gap-5">
+             <button onClick={() => setAppState(AppState.SETTINGS)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border-2 border-white/20 bg-white/10 backdrop-blur-xl flex items-center justify-center text-white hover:bg-white hover:text-black hover:scale-110 transition-all shadow-2xl">
+                <svg width="20" height="20" className="sm:w-[22px] sm:h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                    <circle cx="12" cy="12" r="3"></circle>
                 </svg>
              </button>
-             <div className="text-[11px] text-black font-black uppercase tracking-widest bg-white px-6 py-2.5 rounded-2xl shadow-2xl">
-               Level {currentDay}
+             <div className="text-[10px] sm:text-[11px] text-black font-black uppercase tracking-widest bg-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-2xl">
+               Day {currentDay}
              </div>
           </div>
         </header>
       )}
 
       {/* Main Content Area */}
-      <main className="z-10 w-full max-w-lg flex flex-col items-center gap-8 min-h-[60vh] justify-center transition-all duration-500">
+      <main className="z-10 w-full max-w-lg flex flex-col items-center gap-6 sm:gap-8 min-h-[70vh] justify-center transition-all duration-500 py-16">
         
-        {/* Visualizer */}
+        {/* Visualizer - Mobile Responsive Scaling */}
         {(appState === AppState.INTRO || appState === AppState.CONTEXT_SELECT || appState === AppState.CHAT) && (
-          <div className={`mb-10 animate-fade-in pointer-events-none transform transition-all duration-1000 ${appState === AppState.CHAT ? 'absolute top-10 opacity-20 scale-50' : ''}`}>
+          <div className={`mb-4 sm:mb-10 animate-fade-in pointer-events-none transform transition-all duration-1000 ${appState === AppState.CHAT ? 'fixed top-4 sm:top-10 opacity-10 scale-50 -z-10' : 'relative'}`}>
             <Visualizer state={getVisualizerState()} />
           </div>
         )}
 
         {/* --- INTRO --- */}
         {appState === AppState.INTRO && (
-          <div className="text-center animate-slide-up space-y-12 w-full max-w-sm relative">
+          <div className="text-center animate-slide-up space-y-8 sm:space-y-12 w-full max-w-sm relative">
             <div>
-              <h1 className="text-6xl md:text-7xl font-serif-display text-white mb-8 leading-none drop-shadow-2xl tracking-tighter">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-serif-display text-white mb-6 sm:mb-8 leading-none drop-shadow-2xl tracking-tighter">
                 KOSHA.<br/><span className="bg-gradient-to-r from-fuchsia-400 via-white to-cyan-400 bg-clip-text text-transparent italic">Soul Mirror.</span>
               </h1>
-              <p className="text-white text-xl font-medium drop-shadow-lg opacity-90">
+              <p className="text-white text-lg sm:text-xl font-medium drop-shadow-lg opacity-90 px-4">
                 Decode the spectrum of your soul.
               </p>
             </div>
             
-            <div className="space-y-6">
-              <Button onClick={startJourney} className="px-12 w-full py-6 text-lg">
+            <div className="space-y-4 sm:space-y-6 px-2 w-full">
+              <Button onClick={startJourney} className="px-12 w-full py-5 sm:py-6 text-base sm:text-lg">
                 Enter The Light
               </Button>
-              <Button onClick={() => setAppState(AppState.HISTORY)} variant="ghost" className="w-full text-white/60 hover:text-white font-black uppercase tracking-widest text-xs">
+              <Button onClick={() => setAppState(AppState.HISTORY)} variant="ghost" className="w-full text-white/60 hover:text-white font-black uppercase tracking-widest text-[10px] sm:text-xs">
                 History of Truth
               </Button>
             </div>
 
-            <div className="absolute -bottom-24 left-0 right-0">
-               <p className="text-xs uppercase tracking-[0.4em] text-white/40 font-black">Developed by Ashok</p>
+            <div className="pt-8 sm:pt-0">
+               <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-white/40 font-black">Developed by Ashok</p>
             </div>
           </div>
         )}
@@ -149,11 +149,11 @@ const App: React.FC = () => {
         {appState === AppState.CHAT && insight && <ChatView insight={insight} onBack={() => setAppState(AppState.RESULT)} />}
         
         {appState === AppState.CONTEXT_SELECT && (
-          <div className="w-full animate-slide-up bg-white/5 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 shadow-2xl">
-            <h2 className="text-4xl font-serif-display text-center text-white mb-10 italic">
+          <div className="w-full animate-slide-up bg-white/5 backdrop-blur-3xl p-6 sm:p-10 rounded-3xl sm:rounded-[3rem] border border-white/10 shadow-2xl">
+            <h2 className="text-3xl sm:text-4xl font-serif-display text-center text-white mb-8 sm:mb-10 italic">
               Where are you?
             </h2>
-            <div className="grid grid-cols-1 gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:gap-5">
               {[
                 {id: 'WAKING_UP', label: 'Wake up', color: 'hover:bg-amber-500/30'},
                 {id: 'WORK', label: 'Work', color: 'hover:bg-cyan-500/30'},
@@ -164,12 +164,18 @@ const App: React.FC = () => {
                   key={item.id}
                   variant="secondary" 
                   onClick={() => handleContextSelect(item.id as UserContext)} 
-                  className={`py-6 text-xl font-serif-display italic border-white/5 ${item.color}`}
+                  className={`py-5 sm:py-6 text-lg sm:text-xl font-serif-display italic border-white/5 ${item.color}`}
                 >
                   {item.label}
                 </Button>
               ))}
             </div>
+            <button 
+              onClick={() => setAppState(AppState.INTRO)}
+              className="w-full text-center mt-8 text-zinc-500 text-[10px] uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         )}
 
@@ -190,10 +196,10 @@ const App: React.FC = () => {
         )}
 
         {appState === AppState.ERROR && (
-          <div className="text-center p-10 glass-card rounded-[3rem] border border-red-500/40 animate-slide-up">
-            <div className="text-6xl mb-6">💥</div>
-            <h3 className="text-white font-serif-display text-2xl mb-4">Signal Lost</h3>
-            <p className="text-white/70 mb-10 text-base">
+          <div className="text-center p-8 sm:p-10 glass-card rounded-3xl sm:rounded-[3rem] border border-red-500/40 animate-slide-up mx-2">
+            <div className="text-5xl sm:text-6xl mb-6">💥</div>
+            <h3 className="text-white font-serif-display text-xl sm:text-2xl mb-4">Signal Lost</h3>
+            <p className="text-white/70 mb-10 text-sm sm:text-base">
               The chromatic bridge collapsed.<br/>Reconnect your light.
             </p>
             <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} variant="primary" className="w-full">

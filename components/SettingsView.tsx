@@ -9,8 +9,6 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const [settings, setSettings] = useState<UserSettings>(getSettings());
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [apiKeyInput, setApiKeyInput] = useState(settings.customApiKey || '');
-  const [keySaved, setKeySaved] = useState(false);
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -51,12 +49,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateSettings({ reminderTime: e.target.value });
-  };
-
-  const handleSaveKey = () => {
-    updateSettings({ customApiKey: apiKeyInput.trim() });
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 2000);
   };
 
   const updateSettings = (updates: Partial<UserSettings>) => {
@@ -146,47 +138,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
            <Button variant="ghost" onClick={sendTestNotification} className="w-full text-xs py-3 border border-white/5 hover:bg-white/5">
              Test Notification
            </Button>
-        </div>
-      </div>
-
-      {/* API Configuration Section */}
-      <div className="mt-8 bg-zinc-900/40 backdrop-blur-xl rounded-[2rem] p-8 border border-white/5 space-y-6">
-        <div>
-           <h3 className="text-zinc-200 font-medium text-lg">AI Configuration</h3>
-           <p className="text-zinc-500 text-xs mt-1">Use your own Gemini API Key for analysis.</p>
-        </div>
-        
-        <div className="space-y-4">
-           <div className="relative">
-              <input
-                 type="password"
-                 value={apiKeyInput}
-                 onChange={(e) => setApiKeyInput(e.target.value)}
-                 placeholder="Paste your API Key here"
-                 className="w-full bg-black/40 text-white p-4 rounded-xl border border-white/10 focus:outline-none focus:border-indigo-500/50 focus:bg-black/60 text-sm transition-all"
-              />
-              {apiKeyInput && (
-                 <button 
-                    onClick={() => setApiKeyInput('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white"
-                 >
-                    ✕
-                 </button>
-              )}
-           </div>
-           
-           <Button 
-              onClick={handleSaveKey} 
-              fullWidth 
-              className={keySaved ? "border-emerald-500/50 text-emerald-400 bg-emerald-900/20" : ""}
-           >
-              {keySaved ? "Saved Successfully" : "Save API Key"}
-           </Button>
-           
-           <p className="text-zinc-600 text-[10px] text-center leading-relaxed">
-              Your key is stored locally on this device. <br/>
-              Leave empty to use the default shared key (if available).
-           </p>
         </div>
       </div>
 

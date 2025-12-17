@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
-import { getSettings } from "./storageService";
 
 // PROMPT ENGINEERING:
 // This system instruction creates a "Wise Friend" persona.
@@ -69,29 +68,12 @@ const RESPONSE_SCHEMA = {
 const modelName = 'gemini-3-flash-preview';
 
 // Helper to get the correct client instance
+// Fix: Use process.env.API_KEY exclusively as per guidelines.
 const getAIClient = () => {
-  const settings = getSettings();
-  
-  // Safe Environment Variable Access
-  let envKey = '';
-  try {
-    // @ts-ignore
-    if (typeof process !== 'undefined' && process.env) {
-       // @ts-ignore
-       envKey = process.env.API_KEY;
-    }
-  } catch (e) {
-    // Ignore reference errors
+  if (!process.env.API_KEY) {
+    throw new Error("API_KEY environment variable is not configured.");
   }
-
-  // Prioritize custom key, then env key.
-  const apiKey = settings.customApiKey || envKey;
-  
-  if (!apiKey) {
-    throw new Error("No API Key found. Please add your key in Settings.");
-  }
-  
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const analyzeInput = async (
@@ -156,18 +138,6 @@ export const analyzeInput = async (
   } catch (error: any) {
     console.error("Kosha Connection Error:", error);
     
-    if (error.message?.includes('No API Key found') || error.message?.includes('API key') || error.toString().includes('403')) {
-       return {
-          psychProfile: "Key Configuration Error",
-          simpleExplanation: "Kosha needs an API Key to see you. Please add your key in Settings.",
-          relationshipImpact: "None",
-          currentPattern: "Auth Error",
-          growthPlan: "Update your API Key in Settings.",
-          dailyAction: "Check Settings",
-          emotionalScore: 0
-       };
-    }
-
     return {
       psychProfile: "I am having trouble seeing you clearly right now.",
       simpleExplanation: "My connection was interrupted. Please check your internet and try again.",
@@ -219,10 +189,7 @@ export const getChatResponse = async (
     return response.text || "I am listening.";
   } catch (error: any) {
     console.error("Chat Error:", error);
-    if (error.message?.includes('No API Key found')) {
-        return "Please configure your API Key in settings to chat.";
-    }
-    return "I'm having trouble connecting right now. Please check your API Key in Settings or try again.";
+    return "I'm having trouble connecting right now. Please try again later.";
   }
 };
 
@@ -279,7 +246,7 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
     console.error("Weekly Analysis Error", error);
     return {
       weekTitle: "The Unfinished Week",
-      soulReport: "I cannot read the full story of your week right now. Please check your API Key settings.",
+      soulReport: "I cannot read the full story of your week right now.",
       emotionalTrend: "Unknown",
       keyRealization: "Keep recording to see the pattern.",
       nextWeekMantra: "One day at a time."
