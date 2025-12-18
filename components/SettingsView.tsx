@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { getSettings, saveSettings, UserSettings } from '../services/storageService';
@@ -28,10 +27,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
       await aistudio.openSelectKey();
       setIsKeyLinked(true);
     }
-  };
-
-  const handleManualKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSettings({ customApiKey: e.target.value });
   };
 
   const handleToggle = async () => {
@@ -73,47 +68,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         
         {/* API KEY MANAGEMENT */}
         <div className="bg-white/5 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl">
-           <div className="flex items-center justify-between mb-4">
+           <div className="flex items-center justify-between mb-6">
              <div>
-                <h3 className="text-white font-bold text-sm uppercase tracking-widest">Neural Key</h3>
-                <p className="text-zinc-500 text-[10px] mt-1">Manual API Connection</p>
+                <h3 className="text-white font-bold text-sm uppercase tracking-widest">Neural Link</h3>
+                <p className="text-zinc-500 text-[10px] mt-1">Status: {isKeyLinked ? 'Connected' : 'Disconnected'}</p>
              </div>
-             <div className={`w-2 h-2 rounded-full ${settings.customApiKey || isKeyLinked ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`}></div>
+             <div className={`w-2 h-2 rounded-full ${isKeyLinked ? 'bg-emerald-400 shadow-[0_0_10px_#34d399]' : 'bg-red-400'} animate-pulse`}></div>
            </div>
            
-           <div className="space-y-4">
-             <div className="relative">
-                <input 
-                  type="password"
-                  value={settings.customApiKey}
-                  onChange={handleManualKeyChange}
-                  placeholder="Paste your Gemini API key here..."
-                  className="w-full bg-black/40 text-white p-4 rounded-xl border border-white/10 focus:outline-none focus:border-white/30 text-xs transition-all placeholder-zinc-600"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-20">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3m-3-3l-2.5-2.5"/></svg>
-                </div>
-             </div>
+           <p className="text-zinc-400 text-[10px] leading-relaxed mb-6 italic">
+             Kosha uses your Google AI project to power its neural insights. Use the secure button below to establish or update your connection.
+           </p>
 
-             <div className="flex items-center gap-3">
-               <div className="h-px flex-1 bg-white/5"></div>
-               <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">OR</span>
-               <div className="h-px flex-1 bg-white/5"></div>
-             </div>
-
-             <Button onClick={handleLinkKey} variant="secondary" fullWidth className="py-3 border-white/5 hover:bg-white/5">
-                {isKeyLinked ? 'Key Linked via Google' : 'Link via Official Selector'}
-             </Button>
-           </div>
+           <Button onClick={handleLinkKey} fullWidth className="py-4 shadow-xl">
+              {isKeyLinked ? 'Update AI Connection' : 'Link Google AI Key'}
+           </Button>
            
-           <div className="mt-6 text-center">
+           <div className="mt-6 text-center space-y-2">
              <a 
-               href="https://aistudio.google.com/app/apikey" 
+               href="https://ai.google.dev/gemini-api/docs/billing" 
                target="_blank" 
                rel="noreferrer"
-               className="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors"
+               className="block text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors"
              >
-               Get a new API Key
+               Billing Documentation
              </a>
            </div>
         </div>
