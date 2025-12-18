@@ -3,33 +3,28 @@ import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } fr
 import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a warm, wise, and supportive AI companion.
-Your goal is to look at the user and tell them how they are feeling, functioning, and **exactly what to do about it**.
+You are Kosha, a high-precision Self Understanding Assistant.
+Your goal is to help users understand their inner state by analyzing their outer expression.
 
-**STRICT LANGUAGE RULES:**
-- NO BIG WORDS. Speak like a friend who deeply understands the soul.
+**CORE LANGUAGE RULE: NO CLINICAL JARGON.**
+- Do NOT use words like "orbicularis oculi," "sympathetic nervous system," "bilateral," or "cognitive overload."
+- INSTEAD, use words like "tired eyes," "stressed," "both sides," or "too much on your mind."
+- Speak like a kind, wise friend who values clear communication.
 
-**MISSION 1: SOUL & MIND**
-Analyze facial vitals and cognitive energy (Stress, Focus, Burnout, etc.).
-
-**MISSION 2: STRESS TRIGGERS**
-Identify likely triggers (Social Pressure, Work Overload, Decision Anxiety, Relationship Strain).
-
-**MISSION 3: BEHAVIORAL PROTOCOLS (THE MOST IMPORTANT PART)**
-Provide 2-3 specific "Soul Prescriptions" based on their state:
-- **BREATH**: If stress or anxiety > 60%. (e.g. Box breathing)
-- **REST**: If fatigue or burnout > 60%. (e.g. 15-min digital fast)
-- **SOCIAL**: If relationship strain or high social pressure. (e.g. Reach out to one safe person)
-- **FOCUS**: If focus is low but alertness is high. (e.g. Pomodoro start)
-- **JOURNAL**: If overthinking or mood stability is low. (e.g. Writing one difficult truth)
+**MISSION:**
+1. **Facial Scan**: Look at the eyes, brow, mouth, and jaw for high-accuracy biometric cues.
+2. **Translate to Truth**: Turn those biometric cues into simple, honest observations about the user's current situation.
+3. **The 'Why'**: Connect their face to their context (e.g., "At Work") to explain the source of their stress.
+4. **Action**: Provide 100% simple behavioral protocols that help them feel better immediately.
 
 **OUTPUT FIELDS:**
-- **vitals**: Emotional scores.
-- **cognitive**: Focus, Burnout, Alertness, Overthinking.
-- **stressTriggers**: List of objects {type, impact, description}.
-- **behavioralProtocols**: List of objects {type, title, instruction, duration}.
-- **hiddenRealization**: A "I didn't realize..." moment.
-- **decisionCompass**: Advice on productivity/decisions.
+- **psychProfile**: A very simple summary of their vibe (e.g., "You're holding it all together, but just barely").
+- **simpleExplanation**: What you see on their face in plain words (e.g., "I see you're biting your lip and your eyes look heavy").
+- **neuralEvidence**: The specific simple observation that led to your analysis (e.g., "The way you're frowning even when trying to smile tells me you're exhausted").
+- **confidenceScore**: 0-100 percentage.
+- **hiddenRealization**: Something they are ignoring but you can see.
+- **decisionCompass**: A simple "Yes/No/Wait" piece of advice.
+- **behavioralProtocols**: Simple guides (Breath, Rest, Social, Focus, Journal).
 `;
 
 const RESPONSE_SCHEMA = {
@@ -37,6 +32,8 @@ const RESPONSE_SCHEMA = {
   properties: {
     psychProfile: { type: Type.STRING },
     simpleExplanation: { type: Type.STRING },
+    neuralEvidence: { type: Type.STRING },
+    confidenceScore: { type: Type.INTEGER },
     hiddenRealization: { type: Type.STRING },
     decisionCompass: { type: Type.STRING },
     relationshipImpact: { type: Type.STRING },
@@ -91,10 +88,14 @@ const RESPONSE_SCHEMA = {
       }
     }
   },
-  required: ["psychProfile", "simpleExplanation", "hiddenRealization", "decisionCompass", "relationshipImpact", "currentPattern", "growthPlan", "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols"]
+  required: [
+    "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "hiddenRealization", 
+    "decisionCompass", "relationshipImpact", "currentPattern", "growthPlan", 
+    "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols"
+  ]
 };
 
-const modelName = 'gemini-3-flash-preview';
+const modelName = 'gemini-3-pro-preview';
 
 const getAIClient = () => {
   const settings = getSettings();
@@ -113,15 +114,16 @@ const getAIClient = () => {
 
 export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
   const contextMap: Record<UserContext, string> = {
-    'WAKING_UP': "Context: Just woke up.",
-    'WORK': "Context: At work.",
-    'EVENING': "Context: Evening time.",
-    'BEFORE_SLEEP': "Context: Going to sleep."
+    'WAKING_UP': "I just woke up.",
+    'WORK': "I am currently at work.",
+    'EVENING': "I am relaxing in the evening.",
+    'BEFORE_SLEEP': "I am about to go to sleep."
   };
 
   const promptText = `
-    ${contextMap[context]}
-    Analyze this face for Emotional Vitals, Cognitive Energy, likely Stress Triggers, and mandatory Behavioral Protocols.
+    Analyze my face as my Self Understanding Assistant.
+    Context: ${contextMap[context]}
+    Use simple English only. Tell me what my face says about my current situation.
   `;
 
   try {
@@ -137,13 +139,14 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
+        thinkingConfig: { thinkingBudget: 4000 }
       }
     });
 
     if (response.text) return JSON.parse(response.text) as InsightData;
     throw new Error("Empty response");
   } catch (error: any) {
-    console.error("Analysis Error:", error);
+    console.error("Self Understanding Analysis Failure:", error);
     throw error;
   }
 };
@@ -155,20 +158,20 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
     model: modelName,
     contents: contents,
     config: { 
-      systemInstruction: `${SYSTEM_INSTRUCTION}\nContext: You detected these triggers: ${contextData.stressTriggers.map(t => t.type).join(', ')}. You also suggested: ${contextData.behavioralProtocols.map(p => p.title).join(', ')}.`
+      systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways be simple and helpful. Here is what you saw on their face: ${contextData.neuralEvidence}. Use this to guide the conversation.`
     }
   });
-  return response.text || "I am listening.";
+  return response.text || "I'm here to help you understand yourself.";
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
   const ai = getAIClient();
-  const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}, Triggers: ${e.insight.stressTriggers.map(t=>t.type).join(',')}`).join('\n');
+  const historyText = entries.map(e => `Day ${e.dayNumber}: Context ${e.context}, Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
   const response = await ai.models.generateContent({
     model: modelName,
     contents: { role: 'user', parts: [{ text: historyText }] },
     config: { 
-        systemInstruction: SYSTEM_INSTRUCTION, 
+        systemInstruction: "You are the Kosha Self Understanding Assistant. Look at the user's week and give them a very simple theme for how they've been doing.", 
         responseMimeType: "application/json",
         responseSchema: {
             type: Type.OBJECT,
@@ -179,7 +182,8 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
                 keyRealization: { type: Type.STRING },
                 nextWeekMantra: { type: Type.STRING }
             }
-        }
+        },
+        thinkingConfig: { thinkingBudget: 2000 }
     }
   });
   return response.text ? JSON.parse(response.text) : null;

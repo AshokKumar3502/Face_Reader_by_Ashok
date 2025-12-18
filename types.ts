@@ -43,6 +43,8 @@ export interface BehavioralProtocol {
 export interface InsightData {
   psychProfile: string;
   simpleExplanation: string;
+  neuralEvidence: string; // Specific clinical facial cues detected
+  confidenceScore: number; // 0-100 Accuracy rating
   relationshipImpact: string;
   currentPattern: string;
   growthPlan: string;
@@ -53,7 +55,7 @@ export interface InsightData {
   vitals: EmotionalMetrics;
   cognitive: CognitiveMetrics;
   stressTriggers: StressTrigger[];
-  behavioralProtocols: BehavioralProtocol[]; // New behavioral guidance
+  behavioralProtocols: BehavioralProtocol[];
 }
 
 export interface WeeklyInsight {

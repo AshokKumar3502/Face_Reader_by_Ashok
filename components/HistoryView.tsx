@@ -4,6 +4,7 @@ import { JournalEntry, WeeklyInsight } from '../types';
 import { InsightCard } from './InsightCard';
 import { generateWeeklyReport } from '../services/geminiService';
 import { WeeklyReport } from './WeeklyReport';
+import { Button } from './Button';
 
 interface HistoryViewProps {
   onBack: () => void;
@@ -34,7 +35,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
     if (entries.length < 2) return; 
     setIsAnalyzing(true);
     try {
-      // Take up to the last 14 entries for analysis
       const recentEntries = entries.slice(0, 14); 
       const report = await generateWeeklyReport(recentEntries);
       setWeeklyInsight(report);
@@ -64,8 +64,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
     return acc;
   }, {} as Record<string, JournalEntry[]>);
 
-  // --- RENDER MODALS ---
-
   if (weeklyInsight) {
     return <WeeklyReport data={weeklyInsight} onClose={() => setWeeklyInsight(null)} />;
   }
@@ -74,23 +72,19 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
     return (
       <div className="w-full">
          <div className="mb-6">
-            <button onClick={() => setSelectedEntry(null)} className="group flex items-center gap-2 text-zinc-400 text-sm hover:text-white transition-colors">
-               <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Journal
+            <button onClick={() => setSelectedEntry(null)} className="group flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">
+               <span className="group-hover:-translate-x-1 transition-transform">←</span> Back
             </button>
          </div>
          {selectedEntry.image && (
-             <div className="w-full aspect-square rounded-[2rem] overflow-hidden mb-8 border border-white/10 shadow-2xl relative">
-               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
+             <div className="w-full aspect-square rounded-[2.5rem] overflow-hidden mb-8 border border-white/10 shadow-2xl relative">
+               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                <img src={selectedEntry.image} alt="Recorded mood" className="w-full h-full object-cover" />
-               <div className="absolute bottom-6 left-6 text-white">
-                 <div className="font-serif-display text-2xl mb-1">{getContextLabel(selectedEntry.context)}</div>
-                 <div className="font-mono text-xs opacity-80">
+               <div className="absolute bottom-8 left-8 text-white">
+                 <div className="font-serif-display text-3xl mb-1 italic">"{getContextLabel(selectedEntry.context)}"</div>
+                 <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
                    {new Date(selectedEntry.timestamp).toLocaleString([], {
-                     weekday: 'short', 
-                     month: 'short', 
-                     day: 'numeric', 
-                     hour: '2-digit', 
-                     minute: '2-digit'
+                     weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                    })}
                  </div>
                </div>
@@ -107,54 +101,56 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
 
   if (viewingImage) {
       return (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-fade-in" onClick={() => setViewingImage(null)}>
+          <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 animate-fade-in" onClick={() => setViewingImage(null)}>
               <div className="relative max-w-full max-h-full">
-                  <img src={viewingImage} className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl border border-white/10" alt="Full view" />
-                  <p className="text-center text-zinc-400 mt-6 text-sm font-medium tracking-wide">Tap anywhere to close</p>
+                  <img src={viewingImage} className="max-w-full max-h-[80vh] rounded-[2rem] shadow-2xl border border-white/20" alt="Full view" />
+                  <p className="text-center text-zinc-500 mt-8 text-[10px] font-black uppercase tracking-[0.4em] opacity-60">Tap to close</p>
               </div>
           </div>
       )
   }
 
-  // --- MAIN VIEW ---
-
   return (
     <div className="w-full max-w-lg animate-fade-in pb-12">
-      <div className="flex justify-between items-end mb-8 border-b border-white/5 pb-6">
+      <div className="flex justify-between items-end mb-10 border-b border-white/5 pb-8">
         <div>
-           <h2 className="text-3xl font-serif-display text-white">Journal</h2>
-           <p className="text-zinc-500 text-sm mt-1">Your emotional timeline</p>
+           <h2 className="text-4xl font-serif-display text-white italic">Journal</h2>
+           <p className="text-zinc-500 text-[10px] uppercase font-black tracking-[0.3em] mt-2">Evolution Timeline</p>
         </div>
-        <button onClick={onBack} className="text-sm font-medium text-zinc-500 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">Close</button>
+        <button onClick={onBack} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors px-6 py-3 rounded-xl border border-white/5 hover:bg-white/5">Close</button>
       </div>
 
-      {/* Weekly Analysis Trigger */}
       {entries.length >= 2 && (
-         <div className="mb-10">
+         <div className="mb-12">
             <button 
               onClick={handleWeeklyAnalysis}
               disabled={isAnalyzing}
-              className="w-full relative group overflow-hidden rounded-2xl p-[1px]"
+              className="w-full relative group overflow-hidden rounded-[2rem] p-8 bg-zinc-900 border border-white/10 text-left transition-all hover:bg-zinc-800"
             >
-               <div className="absolute inset-0 bg-gradient-to-r from-amber-500/50 via-purple-500/50 to-amber-500/50 animate-[shimmer_2s_infinite] opacity-70 group-hover:opacity-100 transition-opacity"></div>
-               <div className="relative bg-zinc-900 rounded-2xl p-5 flex items-center justify-between group-hover:bg-zinc-800 transition-colors">
-                  <div>
-                     <h3 className="text-amber-200 font-bold text-sm uppercase tracking-wide flex items-center gap-2">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[60px] group-hover:bg-indigo-500/20 transition-all"></div>
+               <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                     <h3 className="text-indigo-300 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2">
                         {isAnalyzing ? (
                            <>
-                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                              Analyzing...
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                              Synthesizing...
                            </>
                         ) : (
                            <>
-                              <span>✨</span> Unlock Weekly Insight
+                              <span>✨</span> Weekly Insight
                            </>
                         )}
                      </h3>
-                     <p className="text-zinc-500 text-xs mt-1">AI Meta-Analysis of your past week.</p>
+                     <p className="text-white font-serif-display text-xl italic leading-tight">
+                        Deep Meta-Analysis
+                     </p>
+                     <p className="text-zinc-500 text-[10px] font-medium leading-relaxed max-w-[200px]">
+                        Review the hidden patterns of your past 7 days.
+                     </p>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-300 group-hover:scale-110 transition-transform">
-                     →
+                  <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white group-hover:border-white/30 transition-all">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                   </div>
                </div>
             </button>
@@ -162,53 +158,49 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
       )}
 
       {entries.length === 0 ? (
-        <div className="text-center py-24 border border-dashed border-white/5 rounded-3xl bg-white/5">
-          <p className="text-zinc-400 font-serif-display text-xl mb-2">Empty Pages</p>
-          <p className="text-zinc-600 text-sm">Your journey begins with a single photo.</p>
+        <div className="text-center py-32 border border-dashed border-white/10 rounded-[3rem] bg-white/[0.02]">
+          <p className="text-zinc-500 font-serif-display text-2xl mb-2 italic">A blank page</p>
+          <p className="text-zinc-700 text-[10px] uppercase font-black tracking-widest">Capture your first reflection</p>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-12">
           {Object.entries(grouped).map(([dayLabel, rawEntries]) => {
             const dayEntries = rawEntries as JournalEntry[];
-            // Use date of the most recent entry in this group
             const firstEntry = dayEntries[0];
             const dateStr = new Date(firstEntry.timestamp).toLocaleDateString([], { 
-              month: 'short', 
-              day: 'numeric' 
+              month: 'long', day: 'numeric' 
             });
             
             return (
             <div key={dayLabel} className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-4 top-10 bottom-0 w-px bg-white/5 -z-10"></div>
+              <div className="absolute left-5 top-14 bottom-0 w-[1px] bg-gradient-to-b from-white/10 to-transparent -z-10"></div>
               
-              <div className="flex items-center gap-4 mb-6">
-                 <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300 z-10">
+              <div className="flex items-center gap-5 mb-8">
+                 <div className="w-10 h-10 rounded-full bg-black border border-white/10 flex items-center justify-center text-[10px] font-black text-white shadow-2xl z-10">
                     {dayLabel.split(' ')[1]}
                  </div>
                  <div className="flex flex-col">
-                    <h3 className="text-lg font-serif-display text-zinc-200 leading-none">
+                    <h3 className="text-2xl font-serif-display text-white italic">
                         {dayLabel}
                     </h3>
-                    <span className="text-xs text-zinc-500 font-mono mt-1 ml-0.5">{dateStr}</span>
+                    <span className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] mt-1">{dateStr}</span>
                  </div>
               </div>
               
-              <div className="pl-12 space-y-4">
-                {/* Photo Strip */}
+              <div className="pl-14 space-y-6">
                 {dayEntries.some(e => e.image) && (
-                   <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar mb-4">
+                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                       {dayEntries.map(entry => (
                           entry.image && (
-                              <div key={`img-${entry.id}`} className="shrink-0 w-20 h-20 rounded-2xl overflow-hidden border border-white/10 relative group transition-transform hover:scale-105">
+                              <div key={`img-${entry.id}`} className="shrink-0 w-24 h-32 rounded-2xl overflow-hidden border border-white/10 relative group transition-all hover:scale-105 active:scale-95 shadow-xl">
                                   <img 
                                     src={entry.image} 
-                                    className="w-full h-full object-cover cursor-pointer transition-opacity opacity-80 group-hover:opacity-100" 
+                                    className="w-full h-full object-cover cursor-pointer opacity-70 group-hover:opacity-100 transition-opacity" 
                                     onClick={() => setViewingImage(entry.image)}
                                     alt="Thumbnail"
                                   />
-                                  {/* Timestamp Overlay on Photo */}
-                                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[8px] text-center text-white/80 font-mono backdrop-blur-sm">
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                                  <div className="absolute bottom-2 left-0 right-0 text-center text-[8px] text-white/40 font-black tracking-tighter uppercase">
                                     {new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                   </div>
                               </div>
@@ -217,25 +209,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
                    </div>
                 )}
 
-                {/* Entry Cards */}
                 {dayEntries.map(entry => (
                   <button 
                     key={entry.id}
                     onClick={() => setSelectedEntry(entry)}
-                    className="w-full text-left p-5 bg-zinc-900/40 border border-white/5 rounded-2xl hover:bg-white/5 transition-all hover:border-white/10 group relative overflow-hidden"
+                    className="w-full text-left p-6 bg-white/[0.03] border border-white/5 rounded-3xl hover:bg-white/[0.07] transition-all hover:border-white/10 group relative overflow-hidden backdrop-blur-3xl"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none"></div>
-                    
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="text-[10px] font-bold tracking-widest text-teal-500/80 uppercase">
+                    <div className="flex justify-between items-center mb-3">
+                       <span className="text-[9px] font-black tracking-[0.2em] text-indigo-400 uppercase">
                          {getContextLabel(entry.context)}
                        </span>
-                       <span className="text-[10px] text-zinc-600 font-mono">
+                       <span className="text-[9px] text-zinc-600 font-black tracking-widest">
                          {new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                        </span>
                     </div>
                     
-                    <h4 className="text-zinc-300 text-sm font-serif-display leading-relaxed group-hover:text-white transition-colors">
+                    <h4 className="text-zinc-300 text-sm font-serif-display italic leading-relaxed group-hover:text-white transition-colors">
                       "{entry.insight.psychProfile}"
                     </h4>
                   </button>
@@ -244,10 +233,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
             </div>
           )})}
 
-          <div className="pt-12 text-center pb-8">
-             <button onClick={handleClear} className="text-xs font-bold text-red-900/40 hover:text-red-500 transition-colors uppercase tracking-widest">
-                Delete All History
-             </button>
+          <div className="pt-16 flex justify-center">
+             <Button variant="danger" onClick={handleClear} className="w-full max-w-xs">
+                Purge All History
+             </Button>
           </div>
         </div>
       )}

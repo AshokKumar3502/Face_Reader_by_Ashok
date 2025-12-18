@@ -32,10 +32,10 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
 
   const getModeLabel = (mode: ViewMode) => {
     switch(mode) {
-      case 'soul': return 'Soul Vitals';
-      case 'mind': return 'Mind Energy';
-      case 'triggers': return 'Stress Triggers';
-      case 'guidance': return 'Behavioral Protocols';
+      case 'soul': return 'Your feelings';
+      case 'mind': return 'Your energy level';
+      case 'triggers': return 'Why you feel this way';
+      case 'guidance': return 'Daily plan';
     }
   };
 
@@ -54,9 +54,13 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
     <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 sm:pb-12">
       
       {!readonly && (
-         <div className="flex justify-center mb-4 sm:mb-6">
-           <div className="px-5 sm:px-6 py-2 rounded-full rainbow-gradient text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl ring-2 ring-white/20">
-             Guidance protocol active
+         <div className="flex justify-center mb-4 sm:mb-6 gap-3">
+           <div className="px-5 py-2 rounded-full rainbow-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl ring-2 ring-white/20">
+             Self Scan Complete
+           </div>
+           <div className="px-5 py-2 rounded-full bg-black/40 border border-emerald-500/50 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {data.confidenceScore}% Certain
            </div>
          </div>
       )}
@@ -66,7 +70,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
           
           {/* Main Insight */}
           <div className="mb-6 text-center">
-            <h2 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Mirror Result</h2>
+            <h2 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Your State</h2>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif-display italic text-white leading-tight drop-shadow-2xl">
               "{data.psychProfile}"
             </h1>
@@ -117,18 +121,18 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
           <div className="mb-8 min-h-[220px]">
             {viewMode === 'soul' && (
               <div className="grid grid-cols-1 gap-5 animate-fade-in">
-                <VitalBar label="Stress Level" value={data.vitals.stress} colorClass="bg-red-500" />
-                <VitalBar label="Calmness" value={data.vitals.calmness} colorClass="bg-teal-400" />
-                <VitalBar label="Anxiety" value={data.vitals.anxiety} colorClass="bg-orange-400" />
-                <VitalBar label="Emotional Fatigue" value={data.vitals.fatigue} colorClass="bg-indigo-400" />
+                <VitalBar label="Current Stress" value={data.vitals.stress} colorClass="bg-red-500" />
+                <VitalBar label="Inner Peace" value={data.vitals.calmness} colorClass="bg-teal-400" />
+                <VitalBar label="Worry Level" value={data.vitals.anxiety} colorClass="bg-orange-400" />
+                <VitalBar label="Body Fatigue" value={data.vitals.fatigue} colorClass="bg-indigo-400" />
               </div>
             )}
 
             {viewMode === 'mind' && (
               <div className="grid grid-cols-1 gap-5 animate-fade-in">
-                <VitalBar label="Focus Level" value={data.cognitive.focus} colorClass="bg-cyan-400" />
-                <VitalBar label="Alertness" value={data.cognitive.alertness} colorClass="bg-lime-400" />
-                <VitalBar label="Overthinking" value={data.cognitive.overthinking} colorClass="bg-purple-400" />
+                <VitalBar label="Focus Power" value={data.cognitive.focus} colorClass="bg-cyan-400" />
+                <VitalBar label="Awake Level" value={data.cognitive.alertness} colorClass="bg-lime-400" />
+                <VitalBar label="Racing Thoughts" value={data.cognitive.overthinking} colorClass="bg-purple-400" />
                 <VitalBar label="Burnout Risk" value={data.cognitive.burnout} colorClass="bg-rose-400" />
               </div>
             )}
@@ -143,7 +147,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
                           trigger.impact === 'High' ? 'bg-red-500/20 text-red-400' : 
                           trigger.impact === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
                        }`}>
-                         {trigger.impact} Impact
+                         {trigger.impact}
                        </span>
                     </div>
                     <p className="text-zinc-400 text-xs italic leading-relaxed">
@@ -169,7 +173,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
                     {protocol.duration && (
                         <div className="inline-flex items-center gap-1.5 text-[8px] font-black text-emerald-500/60 uppercase tracking-widest border border-emerald-500/20 rounded-full px-3 py-1 bg-black/20">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            {protocol.duration} Session
+                            {protocol.duration}
                         </div>
                     )}
                   </div>
@@ -178,9 +182,17 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
             )}
           </div>
 
+          {/* WHAT I SEE ON YOUR FACE */}
+          <div className="mb-8 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl relative group">
+             <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-500 rounded-full text-[8px] font-black text-white uppercase tracking-[0.2em] shadow-lg">What your face says</div>
+             <p className="text-zinc-300 text-xs italic leading-relaxed font-medium">
+               {data.neuralEvidence}
+             </p>
+          </div>
+
           {/* HIDDEN TRUTH */}
           <div className="mb-8 p-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl relative">
-             <div className="absolute -top-3 left-6 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black text-black uppercase tracking-[0.2em] shadow-lg">Hidden Truth</div>
+             <div className="absolute -top-3 left-6 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black text-black uppercase tracking-[0.2em] shadow-lg">The Hidden Truth</div>
              <p className="text-white text-base italic leading-relaxed font-semibold">
                {data.hiddenRealization}
              </p>
@@ -188,7 +200,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
 
           {/* Simple Explanation */}
           <div className="mb-8 space-y-3">
-             <h4 className="text-[10px] font-black text-white/30 uppercase tracking-widest">Visual Evidence</h4>
+             <h4 className="text-[10px] font-black text-white/30 uppercase tracking-widest">My Summary</h4>
              <p className="text-white/80 text-xs sm:text-sm leading-relaxed border-l border-white/10 pl-4">
                 {data.simpleExplanation}
              </p>
@@ -196,7 +208,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
 
           {/* Action Layer */}
           <div className="bg-gradient-to-br from-indigo-600/20 to-fuchsia-600/20 rounded-2xl p-6 border border-white/10">
-             <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-3">Suggested Path</h4>
+             <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-3">Your Focus Today</h4>
              <p className="text-white text-sm font-bold mb-2">"{data.growthPlan}"</p>
              <div className="flex items-center gap-3 text-white/40 text-[10px] uppercase font-black tracking-widest">
                 <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">✓</span>
@@ -210,11 +222,11 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
       <div className="mt-8 flex flex-col gap-3 px-2 sm:px-0">
         {onChat && !readonly && (
           <Button onClick={onChat} fullWidth className="bg-white text-black py-5 text-xs font-black shadow-2xl uppercase tracking-[0.2em]">
-             Ask About Guidance
+             Chat with your assistant
           </Button>
         )}
         <Button onClick={onReset} variant="secondary" fullWidth className="py-4 font-black text-[10px] uppercase tracking-widest">
-          {readonly ? "Close Entry" : "Back to Mirror"}
+          {readonly ? "Close" : "Back to Mirror"}
         </Button>
       </div>
     </div>

@@ -90,7 +90,10 @@ const App: React.FC = () => {
         <header className="absolute top-0 left-0 right-0 p-6 sm:p-8 md:p-10 flex justify-between items-center z-40 animate-fade-in">
           <div className="flex items-center gap-3 sm:gap-4">
              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-[0_0_15px_white] animate-pulse"></div>
-             <span className="font-serif-display tracking-[0.3em] sm:tracking-[0.4em] text-white text-base sm:text-lg font-black drop-shadow-xl">KOSHA</span>
+             <div className="flex flex-col">
+                <span className="font-serif-display tracking-[0.3em] sm:tracking-[0.4em] text-white text-base sm:text-lg font-black drop-shadow-xl">KOSHA</span>
+                <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest -mt-1">Self Understanding</span>
+             </div>
           </div>
           
           <div className="flex items-center gap-3 sm:gap-5">
@@ -122,19 +125,19 @@ const App: React.FC = () => {
           <div className="text-center animate-slide-up space-y-8 sm:space-y-12 w-full max-w-sm relative">
             <div>
               <h1 className="text-5xl sm:text-6xl md:text-7xl font-serif-display text-white mb-6 sm:mb-8 leading-none drop-shadow-2xl tracking-tighter">
-                KOSHA.<br/><span className="bg-gradient-to-r from-fuchsia-400 via-white to-cyan-400 bg-clip-text text-transparent italic">Soul Mirror.</span>
+                KOSHA.<br/><span className="bg-gradient-to-r from-fuchsia-400 via-white to-cyan-400 bg-clip-text text-transparent italic">Self Understanding Assistant.</span>
               </h1>
               <p className="text-white text-lg sm:text-xl font-medium drop-shadow-lg opacity-90 px-4">
-                Decode the spectrum of your soul.
+                The mirror that explains you to yourself.
               </p>
             </div>
             
             <div className="space-y-4 sm:space-y-6 px-2 w-full">
               <Button onClick={startJourney} className="px-12 w-full py-5 sm:py-6 text-base sm:text-lg">
-                Enter The Light
+                Look Into The Mirror
               </Button>
               <Button onClick={() => setAppState(AppState.HISTORY)} variant="ghost" className="w-full text-white/60 hover:text-white font-black uppercase tracking-widest text-[10px] sm:text-xs">
-                History of Truth
+                View Past Reflections
               </Button>
             </div>
 
@@ -200,7 +203,7 @@ const App: React.FC = () => {
             <div className="text-5xl sm:text-6xl mb-6">💥</div>
             <h3 className="text-white font-serif-display text-xl sm:text-2xl mb-4">Signal Lost</h3>
             <p className="text-white/70 mb-10 text-sm sm:text-base">
-              The chromatic bridge collapsed.<br/>Reconnect your light.
+              The reflection failed.<br/>Let's try that again.
             </p>
             <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} variant="primary" className="w-full">
               Try Reconnecting
