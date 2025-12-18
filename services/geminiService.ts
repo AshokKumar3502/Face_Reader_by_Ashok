@@ -1,5 +1,7 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
+import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
@@ -85,9 +87,18 @@ const RESPONSE_SCHEMA = {
 
 const MODEL_NAME = 'gemini-3-flash-preview';
 
+const getFinalApiKey = () => {
+  const settings = getSettings();
+  const manualKey = settings.customApiKey?.trim();
+  // Prioritize manual key if user provided one, otherwise use injected process.env.API_KEY
+  return manualKey || process.env.API_KEY || '';
+};
+
 export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
-  // Always initialize fresh to catch updated API keys from the selector
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getFinalApiKey();
+  if (!apiKey) throw new Error("AUTH_ERROR");
+
+  const ai = new GoogleGenAI({ apiKey });
   const base64Data = image.split(',')[1] || image;
   
   const contextMap: Record<UserContext, string> = {
@@ -126,7 +137,10 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
 };
 
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getFinalApiKey();
+  if (!apiKey) return "Authentication error. Please link your key in Settings.";
+
+  const ai = new GoogleGenAI({ apiKey });
   const contents = history.map(msg => ({ 
     role: msg.role === 'model' ? 'model' : 'user', 
     parts: [{ text: msg.text }] 
@@ -143,12 +157,15 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
     return response.text || "I'm listening.";
   } catch (error: any) {
     console.error("Chat Error:", error);
-    return "I am having trouble connecting to the neural network. Please check your signal.";
+    return "I am having trouble connecting to the neural network. Please check your signal or API key.";
   }
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getFinalApiKey();
+  if (!apiKey) throw new Error("AUTH_ERROR");
+
+  const ai = new GoogleGenAI({ apiKey });
   const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
   
   try {

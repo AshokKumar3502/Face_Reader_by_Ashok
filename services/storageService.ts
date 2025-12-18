@@ -5,13 +5,14 @@ const STORAGE_KEY = 'serene_journal_v1';
 const SETTINGS_KEY = 'serene_settings_v1';
 
 export interface UserSettings {
+  customApiKey: string;
   reminderEnabled: boolean;
   reminderTime: string; // "HH:mm" 24h format
   lastNotificationDate: string | null; // "YYYY-MM-DD"
 }
 
-// Default settings without manual API key management
 const DEFAULT_SETTINGS: UserSettings = {
+  customApiKey: '',
   reminderEnabled: false,
   reminderTime: "20:00",
   lastNotificationDate: null
