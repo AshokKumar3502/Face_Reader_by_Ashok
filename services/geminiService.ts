@@ -1,8 +1,6 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
 
-// Fixed: UserContext was being used as a value here. Replaced with string representations of its values.
 const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
 Your goal is to help users understand their inner state by analyzing their outer expression.
@@ -13,7 +11,7 @@ Your goal is to help users understand their inner state by analyzing their outer
 
 **MISSION:**
 1. **Facial Scan**: Analyze biometrics from the image.
-2. **Contextualization**: Connect the face to the user's environment (WAKING_UP, WORK, EVENING, or BEFORE_SLEEP).
+2. **Contextualization**: Connect the face to the user's current environment.
 3. **Actionable Insights**: Provide simple behavioral protocols (Breath, Rest, Social, Focus, Journal).
 `;
 
@@ -88,15 +86,15 @@ const RESPONSE_SCHEMA = {
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
-  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
+  // Always initialize fresh to catch updated API keys from the selector
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const base64Data = image.split(',')[1] || image;
   
   const contextMap: Record<UserContext, string> = {
-    'WAKING_UP': "I just woke up.",
-    'WORK': "I am at work.",
-    'EVENING': "I am relaxing in the evening.",
-    'BEFORE_SLEEP': "I am going to sleep."
+    'WAKING_UP': "User just woke up.",
+    'WORK': "User is currently working.",
+    'EVENING': "User is unwinding in the evening.",
+    'BEFORE_SLEEP': "User is preparing for sleep."
   };
 
   try {
@@ -105,7 +103,7 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-          { text: `Context: ${contextMap[context]}. Analyze my face and return JSON.` }
+          { text: `Context: ${contextMap[context]}. Perform a deep biometric and psychological analysis of the user's face. Return strictly valid JSON.` }
         ]
       },
       config: {
@@ -115,19 +113,19 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
       }
     });
 
-    if (!response.text) throw new Error("AI returned an empty response.");
+    if (!response.text) throw new Error("EMPTY_RESPONSE");
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Gemini Analysis Error:", error);
-    const msg = error.message || "Unknown API Error";
-    if (msg.includes('401')) throw new Error("INVALID_KEY");
-    if (msg.includes('429')) throw new Error("QUOTA_EXCEEDED");
-    throw new Error(msg);
+    console.error("Analysis Error Details:", error);
+    const msg = error.message || "";
+    if (msg.includes('401') || msg.includes('403') || msg.includes('not found')) {
+      throw new Error("AUTH_ERROR");
+    }
+    throw error;
   }
 };
 
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
-  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const contents = history.map(msg => ({ 
     role: msg.role === 'model' ? 'model' : 'user', 
@@ -139,26 +137,26 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
       model: MODEL_NAME,
       contents: contents,
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase your response on this detected state: ${contextData.neuralEvidence}`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase your conversation on this state: ${contextData.neuralEvidence}. Keep responses concise and supportive.`
       }
     });
-    return response.text || "I'm listening...";
+    return response.text || "I'm listening.";
   } catch (error: any) {
-    return `Connection error: ${error.message || 'Please check your connection.'}`;
+    console.error("Chat Error:", error);
+    return "I am having trouble connecting to the neural network. Please check your signal.";
   }
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
-  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
   
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: historyText }] },
+      contents: { parts: [{ text: `Summarize this week of emotional data into a meta-analysis: ${historyText}` }] },
       config: { 
-          systemInstruction: "Synthesize these daily entries into a weekly theme.", 
+          systemInstruction: "Synthesize daily entries into a meaningful weekly theme in JSON.", 
           responseMimeType: "application/json",
           responseSchema: {
               type: Type.OBJECT,
@@ -173,9 +171,10 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
       }
     });
     
-    if (!response.text) throw new Error("Empty response from AI");
+    if (!response.text) throw new Error("EMPTY_WEEKLY_REPORT");
     return JSON.parse(response.text) as WeeklyInsight;
   } catch (error) {
+    console.error("Weekly Report Error:", error);
     throw error;
   }
 };

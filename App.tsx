@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Visualizer } from './components/Visualizer';
 import { Button } from './components/Button';
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [insight, setInsight] = useState<InsightData | null>(null);
   const [context, setContext] = useState<UserContext>('WAKING_UP');
   const [currentDay, setCurrentDay] = useState<number>(1);
+  const [errorType, setErrorType] = useState<'AUTH' | 'GENERAL' | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,6 +41,7 @@ const App: React.FC = () => {
 
   const handleAnalysis = async (base64Image: string, manualDayNumber?: number) => {
     setAppState(AppState.LOADING);
+    setErrorType(null);
     setErrorDetails(null);
     try {
       const data = await analyzeInput(base64Image, context);
@@ -46,9 +49,26 @@ const App: React.FC = () => {
       saveEntry(context, data, base64Image, manualDayNumber);
       setAppState(AppState.RESULT);
     } catch (error: any) {
-      console.error("Application Catch:", error);
-      setErrorDetails(error.message || "An unexpected error occurred.");
+      console.error("Application Error:", error);
+      if (error.message === 'AUTH_ERROR') {
+        setErrorType('AUTH');
+        setErrorDetails("The connection to Google AI was rejected. Please verify your API Key in Settings.");
+      } else {
+        setErrorType('GENERAL');
+        setErrorDetails(error.message || "Unknown Connection Failure");
+      }
       setAppState(AppState.ERROR);
+    }
+  };
+
+  const handleFixConnection = async () => {
+    // Cast window to any to access aistudio safely.
+    const aistudio = (window as any).aistudio;
+    if (aistudio) {
+      await aistudio.openSelectKey();
+      setAppState(AppState.CONTEXT_SELECT);
+    } else {
+      setAppState(AppState.SETTINGS);
     }
   };
 
@@ -141,14 +161,18 @@ const App: React.FC = () => {
 
         {appState === AppState.ERROR && (
           <div className="text-center p-10 glass-card rounded-[3rem] border border-red-500/40 animate-slide-up mx-2 w-full max-w-sm">
-            <div className="text-6xl mb-6">⚠️</div>
-            <h3 className="text-white font-serif-display text-2xl mb-4 italic">Signal Distorted</h3>
+            <div className="text-6xl mb-6">{errorType === 'AUTH' ? '🔑' : '⚠️'}</div>
+            <h3 className="text-white font-serif-display text-2xl mb-4 italic">
+              {errorType === 'AUTH' ? 'Connection Blocked' : 'Signal Distorted'}
+            </h3>
             <p className="text-white/60 mb-10 text-xs uppercase tracking-widest font-bold bg-red-500/10 p-4 rounded-xl border border-red-500/20">
                {errorDetails || "Unknown Connection Failure"}
             </p>
             <div className="flex flex-col gap-3">
-              <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} variant="primary" className="w-full">Retry Capture</Button>
-              <Button onClick={() => setAppState(AppState.SETTINGS)} variant="secondary" className="w-full">Check API Settings</Button>
+              <Button onClick={handleFixConnection} variant="primary" className="w-full">
+                {errorType === 'AUTH' ? 'Relink API Key' : 'Try Again'}
+              </Button>
+              <Button onClick={() => setAppState(AppState.SETTINGS)} variant="secondary" className="w-full">Open Settings</Button>
             </div>
           </div>
         )}
