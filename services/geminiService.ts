@@ -13,18 +13,9 @@ Your goal is to help users understand their inner state by analyzing their outer
 
 **MISSION:**
 1. **Facial Scan**: Look at the eyes, brow, mouth, and jaw for high-accuracy biometric cues.
-2. **Translate to Truth**: Turn those biometric cues into simple, honest observations about the user's current situation.
+2. **Translate to Truth**: Turn those biometric cues into simple, honest observations.
 3. **The 'Why'**: Connect their face to their context (e.g., "At Work") to explain the source of their stress.
 4. **Action**: Provide 100% simple behavioral protocols that help them feel better immediately.
-
-**OUTPUT FIELDS:**
-- **psychProfile**: A very simple summary of their vibe (e.g., "You're holding it all together, but just barely").
-- **simpleExplanation**: What you see on their face in plain words (e.g., "I see you're biting your lip and your eyes look heavy").
-- **neuralEvidence**: The specific simple observation that led to your analysis (e.g., "The way you're frowning even when trying to smile tells me you're exhausted").
-- **confidenceScore**: 0-100 percentage.
-- **hiddenRealization**: Something they are ignoring but you can see.
-- **decisionCompass**: A simple "Yes/No/Wait" piece of advice.
-- **behavioralProtocols**: Simple guides (Breath, Rest, Social, Focus, Journal).
 `;
 
 const RESPONSE_SCHEMA = {
@@ -95,21 +86,30 @@ const RESPONSE_SCHEMA = {
   ]
 };
 
-const modelName = 'gemini-3-pro-preview';
+// Switching to a more resilient model for general users to prevent timeouts
+const modelName = 'gemini-1.5-flash-latest'; 
 
 const getAIClient = () => {
   const settings = getSettings();
+  
+  // Explicitly prioritize the manually entered key if it exists
+  const manualKey = settings.customApiKey?.trim();
   let envKey = '';
   try {
     // @ts-ignore
-    if (typeof process !== 'undefined' && process.env) {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
        // @ts-ignore
        envKey = process.env.API_KEY;
     }
   } catch (e) {}
-  const apiKey = envKey || settings.customApiKey;
-  if (!apiKey) throw new Error("No API Key found. Please add your key in Settings.");
-  return new GoogleGenAI({ apiKey });
+
+  const finalKey = manualKey || envKey;
+
+  if (!finalKey) {
+    throw new Error("KEY_MISSING");
+  }
+  
+  return new GoogleGenAI({ apiKey: finalKey });
 };
 
 export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
@@ -120,12 +120,6 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
     'BEFORE_SLEEP': "I am about to go to sleep."
   };
 
-  const promptText = `
-    Analyze my face as my Self Understanding Assistant.
-    Context: ${contextMap[context]}
-    Use simple English only. Tell me what my face says about my current situation.
-  `;
-
   try {
     const ai = getAIClient();
     const base64Data = image.split(',')[1] || image;
@@ -133,20 +127,23 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
       model: modelName,
       contents: {
         role: 'user',
-        parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Data } }, { text: promptText }]
+        parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Data } }, { text: `Analyze my face. Context: ${contextMap[context]}` }]
       },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
-        thinkingConfig: { thinkingBudget: 4000 }
+        responseSchema: RESPONSE_SCHEMA
       }
     });
 
     if (response.text) return JSON.parse(response.text) as InsightData;
-    throw new Error("Empty response");
+    throw new Error("EMPTY_RESPONSE");
   } catch (error: any) {
     console.error("Self Understanding Analysis Failure:", error);
+    // Pass specific error messages up to help debugging
+    if (error.message?.includes('401') || error.message?.includes('API_KEY_INVALID')) {
+       throw new Error("INVALID_KEY");
+    }
     throw error;
   }
 };
@@ -158,20 +155,20 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
     model: modelName,
     contents: contents,
     config: { 
-      systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways be simple and helpful. Here is what you saw on their face: ${contextData.neuralEvidence}. Use this to guide the conversation.`
+      systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways be simple and helpful. Context from their face: ${contextData.neuralEvidence}.`
     }
   });
-  return response.text || "I'm here to help you understand yourself.";
+  return response.text || "I'm here to help.";
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
   const ai = getAIClient();
-  const historyText = entries.map(e => `Day ${e.dayNumber}: Context ${e.context}, Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
+  const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}`).join('\n');
   const response = await ai.models.generateContent({
     model: modelName,
     contents: { role: 'user', parts: [{ text: historyText }] },
     config: { 
-        systemInstruction: "You are the Kosha Self Understanding Assistant. Look at the user's week and give them a very simple theme for how they've been doing.", 
+        systemInstruction: "Summarize the user's week in simple English.", 
         responseMimeType: "application/json",
         responseSchema: {
             type: Type.OBJECT,
@@ -182,8 +179,7 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
                 keyRealization: { type: Type.STRING },
                 nextWeekMantra: { type: Type.STRING }
             }
-        },
-        thinkingConfig: { thinkingBudget: 2000 }
+        }
     }
   });
   return response.text ? JSON.parse(response.text) : null;

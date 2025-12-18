@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [insight, setInsight] = useState<InsightData | null>(null);
   const [context, setContext] = useState<UserContext>('WAKING_UP');
   const [currentDay, setCurrentDay] = useState<number>(1);
+  const [errorType, setErrorType] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentDay(getCurrentDay());
@@ -47,13 +48,19 @@ const App: React.FC = () => {
 
   const handleAnalysis = async (base64Image: string, manualDayNumber?: number) => {
     setAppState(AppState.LOADING);
+    setErrorType(null);
     try {
       const data = await analyzeInput(base64Image, context);
       setInsight(data);
       saveEntry(context, data, base64Image, manualDayNumber);
       setAppState(AppState.RESULT);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      if (error.message === 'KEY_MISSING' || error.message === 'INVALID_KEY') {
+        setErrorType(error.message);
+      } else {
+        setErrorType('GENERAL');
+      }
       setAppState(AppState.ERROR);
     }
   };
@@ -75,17 +82,15 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
       
-      {/* Hyper-Saturated Ambient Background Elements */}
+      {/* Ambient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-[100vw] h-[100vw] bg-fuchsia-600/30 rounded-full blur-[140px] animate-float mix-blend-screen opacity-60"></div>
          <div className="absolute bottom-[-10%] right-[-10%] w-[100vw] h-[100vw] bg-cyan-500/30 rounded-full blur-[140px] animate-float-delayed mix-blend-screen opacity-60"></div>
          <div className="absolute top-[20%] left-[20%] w-[60vw] h-[60vw] bg-amber-400/20 rounded-full blur-[120px] animate-pulse-slow mix-blend-screen opacity-40"></div>
       </div>
 
-      {/* --- UNIQUE LOADING STATE --- */}
       {appState === AppState.LOADING && <LoadingScreen />}
 
-      {/* Header - Adaptive Positioning */}
       {!isUtilityView && appState !== AppState.LOADING && (
         <header className="absolute top-0 left-0 right-0 p-6 sm:p-8 md:p-10 flex justify-between items-center z-40 animate-fade-in">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -110,17 +115,14 @@ const App: React.FC = () => {
         </header>
       )}
 
-      {/* Main Content Area */}
       <main className="z-10 w-full max-w-lg flex flex-col items-center gap-6 sm:gap-8 min-h-[70vh] justify-center transition-all duration-500 py-16">
         
-        {/* Visualizer - Mobile Responsive Scaling */}
         {(appState === AppState.INTRO || appState === AppState.CONTEXT_SELECT || appState === AppState.CHAT) && (
           <div className={`mb-4 sm:mb-10 animate-fade-in pointer-events-none transform transition-all duration-1000 ${appState === AppState.CHAT ? 'fixed top-4 sm:top-10 opacity-10 scale-50 -z-10' : 'relative'}`}>
             <Visualizer state={getVisualizerState()} />
           </div>
         )}
 
-        {/* --- INTRO --- */}
         {appState === AppState.INTRO && (
           <div className="text-center animate-slide-up space-y-8 sm:space-y-12 w-full max-w-sm relative">
             <div>
@@ -140,10 +142,6 @@ const App: React.FC = () => {
                 View Past Reflections
               </Button>
             </div>
-
-            <div className="pt-8 sm:pt-0">
-               <p className="text-[10px] sm:text-xs uppercase tracking-[0.4em] text-white/40 font-black">Developed by Ashok</p>
-            </div>
           </div>
         )}
 
@@ -157,28 +155,18 @@ const App: React.FC = () => {
               Where are you?
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:gap-5">
-              {[
-                {id: 'WAKING_UP', label: 'Wake up', color: 'hover:bg-amber-500/30'},
-                {id: 'WORK', label: 'Work', color: 'hover:bg-cyan-500/30'},
-                {id: 'EVENING', label: 'Evening', color: 'hover:bg-rose-500/30'},
-                {id: 'BEFORE_SLEEP', label: 'Going to sleep', color: 'hover:bg-indigo-500/30'}
-              ].map(item => (
+              {['WAKING_UP', 'WORK', 'EVENING', 'BEFORE_SLEEP'].map(id => (
                 <Button 
-                  key={item.id}
+                  key={id}
                   variant="secondary" 
-                  onClick={() => handleContextSelect(item.id as UserContext)} 
-                  className={`py-5 sm:py-6 text-lg sm:text-xl font-serif-display italic border-white/5 ${item.color}`}
+                  onClick={() => handleContextSelect(id as UserContext)} 
+                  className="py-5 sm:py-6 text-lg sm:text-xl font-serif-display italic border-white/5"
                 >
-                  {item.label}
+                  {id.replace('_', ' ').toLowerCase()}
                 </Button>
               ))}
             </div>
-            <button 
-              onClick={() => setAppState(AppState.INTRO)}
-              className="w-full text-center mt-8 text-zinc-500 text-[10px] uppercase tracking-widest hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setAppState(AppState.INTRO)} className="w-full text-center mt-8 text-zinc-500 text-[10px] uppercase tracking-widest">Cancel</button>
           </div>
         )}
 
@@ -200,14 +188,23 @@ const App: React.FC = () => {
 
         {appState === AppState.ERROR && (
           <div className="text-center p-8 sm:p-10 glass-card rounded-3xl sm:rounded-[3rem] border border-red-500/40 animate-slide-up mx-2">
-            <div className="text-5xl sm:text-6xl mb-6">💥</div>
-            <h3 className="text-white font-serif-display text-xl sm:text-2xl mb-4">Signal Lost</h3>
+            <div className="text-5xl sm:text-6xl mb-6">{errorType === 'INVALID_KEY' ? '🔑' : '💥'}</div>
+            <h3 className="text-white font-serif-display text-xl sm:text-2xl mb-4">
+              {errorType === 'INVALID_KEY' ? 'Key Connection Failed' : 'Signal Lost'}
+            </h3>
             <p className="text-white/70 mb-10 text-sm sm:text-base">
-              The reflection failed.<br/>Let's try that again.
+              {errorType === 'INVALID_KEY' 
+                ? "The API key you provided doesn't seem to work. Please check it in Settings."
+                : "The reflection failed to connect. Let's try that again."}
             </p>
-            <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} variant="primary" className="w-full">
-              Try Reconnecting
-            </Button>
+            <div className="flex flex-col gap-3">
+              <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} variant="primary" className="w-full">
+                Try Again
+              </Button>
+              <Button onClick={() => setAppState(AppState.SETTINGS)} variant="secondary" className="w-full">
+                Check Settings
+              </Button>
+            </div>
           </div>
         )}
 
