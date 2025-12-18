@@ -1,21 +1,20 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
-import { getSettings } from "./storageService";
 
+// Fixed: UserContext was being used as a value here. Replaced with string representations of its values.
 const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
 Your goal is to help users understand their inner state by analyzing their outer expression.
 
 **CORE LANGUAGE RULE: NO CLINICAL JARGON.**
-- Do NOT use words like "orbicularis oculi," "sympathetic nervous system," "bilateral," or "cognitive overload."
-- INSTEAD, use words like "tired eyes," "stressed," "both sides," or "too much on your mind."
-- Speak like a kind, wise friend who values clear communication.
+- Speak like a kind, wise friend. 
+- Use simple terms like "tired eyes," "stressed," or "overwhelmed."
 
 **MISSION:**
-1. **Facial Scan**: Look at the eyes, brow, mouth, and jaw for high-accuracy biometric cues.
-2. **Translate to Truth**: Turn those biometric cues into simple, honest observations.
-3. **The 'Why'**: Connect their face to their context (e.g., "At Work") to explain the source of their stress.
-4. **Action**: Provide 100% simple behavioral protocols that help them feel better immediately.
+1. **Facial Scan**: Analyze biometrics from the image.
+2. **Contextualization**: Connect the face to the user's environment (WAKING_UP, WORK, EVENING, or BEFORE_SLEEP).
+3. **Actionable Insights**: Provide simple behavioral protocols (Breath, Rest, Social, Focus, Journal).
 `;
 
 const RESPONSE_SCHEMA = {
@@ -86,101 +85,97 @@ const RESPONSE_SCHEMA = {
   ]
 };
 
-// Switching to a more resilient model for general users to prevent timeouts
-const modelName = 'gemini-1.5-flash-latest'; 
-
-const getAIClient = () => {
-  const settings = getSettings();
-  
-  // Explicitly prioritize the manually entered key if it exists
-  const manualKey = settings.customApiKey?.trim();
-  let envKey = '';
-  try {
-    // @ts-ignore
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-       // @ts-ignore
-       envKey = process.env.API_KEY;
-    }
-  } catch (e) {}
-
-  const finalKey = manualKey || envKey;
-
-  if (!finalKey) {
-    throw new Error("KEY_MISSING");
-  }
-  
-  return new GoogleGenAI({ apiKey: finalKey });
-};
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
+  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const base64Data = image.split(',')[1] || image;
+  
   const contextMap: Record<UserContext, string> = {
     'WAKING_UP': "I just woke up.",
-    'WORK': "I am currently at work.",
+    'WORK': "I am at work.",
     'EVENING': "I am relaxing in the evening.",
-    'BEFORE_SLEEP': "I am about to go to sleep."
+    'BEFORE_SLEEP': "I am going to sleep."
   };
 
   try {
-    const ai = getAIClient();
-    const base64Data = image.split(',')[1] || image;
     const response = await ai.models.generateContent({
-      model: modelName,
+      model: MODEL_NAME,
       contents: {
-        role: 'user',
-        parts: [{ inlineData: { mimeType: 'image/jpeg', data: base64Data } }, { text: `Analyze my face. Context: ${contextMap[context]}` }]
+        parts: [
+          { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
+          { text: `Context: ${contextMap[context]}. Analyze my face and return JSON.` }
+        ]
       },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA
+        responseSchema: RESPONSE_SCHEMA,
       }
     });
 
-    if (response.text) return JSON.parse(response.text) as InsightData;
-    throw new Error("EMPTY_RESPONSE");
+    if (!response.text) throw new Error("AI returned an empty response.");
+    return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Self Understanding Analysis Failure:", error);
-    // Pass specific error messages up to help debugging
-    if (error.message?.includes('401') || error.message?.includes('API_KEY_INVALID')) {
-       throw new Error("INVALID_KEY");
-    }
-    throw error;
+    console.error("Gemini Analysis Error:", error);
+    const msg = error.message || "Unknown API Error";
+    if (msg.includes('401')) throw new Error("INVALID_KEY");
+    if (msg.includes('429')) throw new Error("QUOTA_EXCEEDED");
+    throw new Error(msg);
   }
 };
 
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
-  const ai = getAIClient();
-  const contents = history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
-  const response = await ai.models.generateContent({
-    model: modelName,
-    contents: contents,
-    config: { 
-      systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways be simple and helpful. Context from their face: ${contextData.neuralEvidence}.`
-    }
-  });
-  return response.text || "I'm here to help.";
+  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const contents = history.map(msg => ({ 
+    role: msg.role === 'model' ? 'model' : 'user', 
+    parts: [{ text: msg.text }] 
+  }));
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: contents,
+      config: { 
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase your response on this detected state: ${contextData.neuralEvidence}`
+      }
+    });
+    return response.text || "I'm listening...";
+  } catch (error: any) {
+    return `Connection error: ${error.message || 'Please check your connection.'}`;
+  }
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
-  const ai = getAIClient();
-  const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}`).join('\n');
-  const response = await ai.models.generateContent({
-    model: modelName,
-    contents: { role: 'user', parts: [{ text: historyText }] },
-    config: { 
-        systemInstruction: "Summarize the user's week in simple English.", 
-        responseMimeType: "application/json",
-        responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-                weekTitle: { type: Type.STRING },
-                soulReport: { type: Type.STRING },
-                emotionalTrend: { type: Type.STRING },
-                keyRealization: { type: Type.STRING },
-                nextWeekMantra: { type: Type.STRING }
-            }
-        }
-    }
-  });
-  return response.text ? JSON.parse(response.text) : null;
+  // Always use new GoogleGenAI({ apiKey: process.env.API_KEY }) as per guidelines.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: { parts: [{ text: historyText }] },
+      config: { 
+          systemInstruction: "Synthesize these daily entries into a weekly theme.", 
+          responseMimeType: "application/json",
+          responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                  weekTitle: { type: Type.STRING },
+                  soulReport: { type: Type.STRING },
+                  emotionalTrend: { type: Type.STRING },
+                  keyRealization: { type: Type.STRING },
+                  nextWeekMantra: { type: Type.STRING }
+              }
+          }
+      }
+    });
+    
+    if (!response.text) throw new Error("Empty response from AI");
+    return JSON.parse(response.text) as WeeklyInsight;
+  } catch (error) {
+    throw error;
+  }
 };

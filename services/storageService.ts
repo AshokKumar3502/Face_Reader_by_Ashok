@@ -1,3 +1,4 @@
+
 import { JournalEntry, InsightData, UserContext } from '../types';
 
 const STORAGE_KEY = 'serene_journal_v1';
@@ -7,15 +8,13 @@ export interface UserSettings {
   reminderEnabled: boolean;
   reminderTime: string; // "HH:mm" 24h format
   lastNotificationDate: string | null; // "YYYY-MM-DD"
-  customApiKey?: string; // User-provided API key
 }
 
-// Default settings
+// Default settings without manual API key management
 const DEFAULT_SETTINGS: UserSettings = {
   reminderEnabled: false,
   reminderTime: "20:00",
-  lastNotificationDate: null,
-  customApiKey: ""
+  lastNotificationDate: null
 };
 
 // --- Journal Functions ---

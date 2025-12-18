@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from './Button';
 import { getSettings, saveSettings, UserSettings } from '../services/storageService';
@@ -50,10 +51,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     updateSettings({ reminderTime: e.target.value });
   };
 
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSettings({ customApiKey: e.target.value });
-  };
-
   const updateSettings = (updates: Partial<UserSettings>) => {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
@@ -93,54 +90,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
 
       <div className="space-y-6">
         
-        {/* API CONFIGURATION - RESTORED */}
-        <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl overflow-hidden relative group">
-           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-colors"></div>
-           
-           <h3 className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-             AI Configuration
-           </h3>
-           
-           <div className="space-y-4">
-              <p className="text-zinc-400 text-[10px] leading-relaxed">
-                 To mirror your soul, Kosha requires a connection to the Gemini Intelligence Network.
-              </p>
-              
-              <div className="relative">
-                 <input 
-                   type="password" 
-                   value={settings.customApiKey || ''}
-                   onChange={handleApiKeyChange}
-                   placeholder="Enter Gemini API Key..."
-                   className="w-full bg-black/60 text-white px-5 py-4 rounded-2xl border border-white/5 focus:outline-none focus:border-indigo-500/50 transition-all text-sm font-mono placeholder-zinc-700 shadow-inner"
-                 />
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                 </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                 <a 
-                   href="https://ai.google.dev/" 
-                   target="_blank" 
-                   rel="noopener noreferrer"
-                   className="text-[9px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5"
-                 >
-                   Get Key from Google
-                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                      <polyline points="15 3 21 3 21 9"></polyline>
-                      <line x1="10" y1="14" x2="21" y2="3"></line>
-                   </svg>
-                 </a>
-                 <div className="text-[9px] text-zinc-600 font-bold uppercase">Signal: {settings.customApiKey ? 'Ready' : 'Waiting'}</div>
-              </div>
-           </div>
-        </div>
+        {/* API key management removed as per instructions to only use environment-provided keys */}
 
         {/* NOTIFICATION SETTINGS */}
         <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl">
