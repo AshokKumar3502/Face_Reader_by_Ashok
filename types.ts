@@ -12,22 +12,56 @@ export enum AppState {
 
 export type UserContext = 'WAKING_UP' | 'WORK' | 'EVENING' | 'BEFORE_SLEEP';
 
+export interface EmotionalMetrics {
+  stress: number;    // 0-100
+  calmness: number;  // 0-100
+  anxiety: number;   // 0-100
+  fatigue: number;   // 0-100
+  stability: number; // 0-100
+}
+
+export interface CognitiveMetrics {
+  focus: number;     // 0-100
+  burnout: number;   // 0-100
+  alertness: number; // 0-100
+  overthinking: number; // 0-100
+}
+
+export interface StressTrigger {
+  type: string;        // e.g., "Social Pressure"
+  impact: 'High' | 'Medium' | 'Subtle';
+  description: string; // One sentence why
+}
+
+export interface BehavioralProtocol {
+  type: 'BREATH' | 'REST' | 'SOCIAL' | 'FOCUS' | 'JOURNAL';
+  title: string;
+  instruction: string;
+  duration?: string; // e.g., "5 mins"
+}
+
 export interface InsightData {
-  psychProfile: string;    // Deep observation
-  simpleExplanation: string; // New: Detailed simple explanation
-  relationshipImpact: string; // How this mood affects others
-  currentPattern: string;  // e.g., "Your stress peaks in the afternoon"
-  growthPlan: string;      // Mentor advice
-  dailyAction: string;     // Simple task
-  emotionalScore: number;  // 0-100 (Peace/Balance level)
+  psychProfile: string;
+  simpleExplanation: string;
+  relationshipImpact: string;
+  currentPattern: string;
+  growthPlan: string;
+  dailyAction: string;
+  emotionalScore: number;
+  hiddenRealization: string;
+  decisionCompass: string;
+  vitals: EmotionalMetrics;
+  cognitive: CognitiveMetrics;
+  stressTriggers: StressTrigger[];
+  behavioralProtocols: BehavioralProtocol[]; // New behavioral guidance
 }
 
 export interface WeeklyInsight {
-  weekTitle: string;       // e.g., "The Week of Hidden Courage"
-  soulReport: string;      // Narrative summary of the week
-  emotionalTrend: string;  // e.g., "Rising Anxiety", "Finding Peace"
-  keyRealization: string;  // The hidden truth connecting the days
-  nextWeekMantra: string;  // Simple phrase to carry forward
+  weekTitle: string;
+  soulReport: string;
+  emotionalTrend: string;
+  keyRealization: string;
+  nextWeekMantra: string;
 }
 
 export interface JournalEntry {
@@ -36,11 +70,11 @@ export interface JournalEntry {
   dayNumber: number;
   context: UserContext;
   insight: InsightData;
-  image: string; // Base64 image data
+  image: string; 
 }
 
 export interface AnalysisRequest {
-  image: string; // Base64
+  image: string;
   context: UserContext;
 }
 
