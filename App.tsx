@@ -46,7 +46,12 @@ const App: React.FC = () => {
     try {
       const data = await analyzeInput(base64Image, context);
       setInsight(data);
-      saveEntry(context, data, base64Image, manualDayNumber);
+      
+      // ONLY save to history if it's a real human face
+      if (data.isHuman) {
+        saveEntry(context, data, base64Image, manualDayNumber);
+      }
+      
       setAppState(AppState.RESULT);
     } catch (error: any) {
       console.error("Application Error:", error);
@@ -62,7 +67,6 @@ const App: React.FC = () => {
   };
 
   const handleFixConnection = async () => {
-    // Cast window to any to access aistudio safely.
     const aistudio = (window as any).aistudio;
     if (aistudio) {
       await aistudio.openSelectKey();
@@ -152,7 +156,7 @@ const App: React.FC = () => {
         )}
 
         {appState === AppState.RESULT && insight && (
-          <InsightCard data={insight} onReset={() => setAppState(AppState.INTRO)} onChat={() => setAppState(AppState.CHAT)} />
+          <InsightCard data={insight} onReset={() => setAppState(AppState.INTRO)} onChat={() => (insight.isHuman ? setAppState(AppState.CHAT) : undefined)} />
         )}
 
         {appState === AppState.HISTORY && <HistoryView onBack={() => setAppState(AppState.INTRO)} />}

@@ -7,19 +7,20 @@ const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
 Your goal is to help users understand their inner state by analyzing their outer expression.
 
+**STRICT RULE: HUMAN FACE ONLY.**
+- If the image does NOT contain a clear human face (e.g., it's a pet, an object, a landscape, or blurry/dark), you MUST set "isHuman" to false.
+- In the case where "isHuman" is false, set "psychProfile" to "Vision Obscured" and provide a friendly explanation in "simpleExplanation" about why you couldn't find a human face (e.g., "I see an object, but no soul to mirror" or "The lens cannot find your features").
+- Only proceed with biometric analysis if a human face is clearly present.
+
 **CORE LANGUAGE RULE: NO CLINICAL JARGON.**
 - Speak like a kind, wise friend. 
 - Use simple terms like "tired eyes," "stressed," or "overwhelmed."
-
-**MISSION:**
-1. **Facial Scan**: Analyze biometrics from the image.
-2. **Contextualization**: Connect the face to the user's current environment.
-3. **Actionable Insights**: Provide simple behavioral protocols (Breath, Rest, Social, Focus, Journal).
 `;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
+    isHuman: { type: Type.BOOLEAN },
     psychProfile: { type: Type.STRING },
     simpleExplanation: { type: Type.STRING },
     neuralEvidence: { type: Type.STRING },
@@ -79,7 +80,7 @@ const RESPONSE_SCHEMA = {
     }
   },
   required: [
-    "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "hiddenRealization", 
+    "isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "hiddenRealization", 
     "decisionCompass", "relationshipImpact", "currentPattern", "growthPlan", 
     "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols"
   ]
@@ -89,7 +90,6 @@ const MODEL_NAME = 'gemini-3-flash-preview';
 
 const getActiveApiKey = () => {
   const settings = getSettings();
-  // Use manual key if provided, otherwise fallback to injected process.env.API_KEY
   return settings.customApiKey?.trim() || process.env.API_KEY || '';
 };
 
@@ -113,7 +113,7 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-          { text: `Context: ${contextMap[context]}. Perform a deep biometric and psychological analysis of the user's face. Return strictly valid JSON.` }
+          { text: `Context: ${contextMap[context]}. Check if a human face is present. If yes, perform a deep biometric and psychological analysis. If no, set isHuman to false and explain why in simpleExplanation. Return strictly valid JSON.` }
         ]
       },
       config: {

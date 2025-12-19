@@ -1,3 +1,4 @@
+
 export enum AppState {
   INTRO = 'INTRO',
   CONTEXT_SELECT = 'CONTEXT_SELECT',
@@ -41,6 +42,7 @@ export interface BehavioralProtocol {
 }
 
 export interface InsightData {
+  isHuman: boolean; // TRUE if human face detected
   psychProfile: string;
   simpleExplanation: string;
   neuralEvidence: string; // Specific clinical facial cues detected

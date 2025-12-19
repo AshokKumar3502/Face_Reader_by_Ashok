@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { InsightData, BehavioralProtocol } from '../types';
 import { Button } from './Button';
@@ -50,6 +51,40 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
     }
   };
 
+  // --- No Human Face UI ---
+  if (data.isHuman === false) {
+    return (
+      <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 sm:pb-12">
+        <div className="relative overflow-hidden glass-card rounded-3xl sm:rounded-[3rem] border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.1)]">
+          <div className="bg-black/60 rounded-[1.4rem] sm:rounded-[2.9rem] p-10 text-center relative z-10">
+            <div className="w-24 h-24 mx-auto mb-8 bg-amber-500/10 rounded-full flex items-center justify-center text-4xl animate-pulse">
+              📵
+            </div>
+            <h2 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-4">Signal Lost</h2>
+            <h1 className="text-2xl sm:text-3xl font-serif-display italic text-white mb-6">
+              "Vision Obscured"
+            </h1>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-8 italic">
+              {data.simpleExplanation || "I see an object or a reflection, but I cannot find a human face to mirror. Please ensure you are in a well-lit area and looking directly at the lens."}
+            </p>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Neural Status</p>
+              <p className="text-white text-xs mt-1">Verification Failed: Non-Human Entity Detected</p>
+            </div>
+          </div>
+          {/* Static Effect Overlay */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://media.giphy.com/media/oEI9uWUqnW8Y8/giphy.gif')] bg-cover mix-blend-overlay"></div>
+        </div>
+        <div className="mt-8">
+           <Button onClick={onReset} variant="secondary" fullWidth className="py-5 font-black text-xs uppercase tracking-widest border-white/10">
+              Try Again
+           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Normal Insight UI ---
   return (
     <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 sm:pb-12">
       
