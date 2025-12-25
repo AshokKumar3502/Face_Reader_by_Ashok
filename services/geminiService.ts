@@ -6,18 +6,16 @@ const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
 Your goal is to help users understand their inner state by analyzing their outer expression (Face) and inner voice (Prosody).
 
-**STRICT RULE: HUMAN FACE ONLY.**
-- If the image does NOT contain a clear human face, you MUST set "isHuman" to false.
+**HUMAN DETECTION GUIDELINE:**
+- Attempt to identify a human face. If the image is extremely blurry, too dark, or clearly of an object/pet with no human features, set "isHuman" to false. 
+- If a face is partially visible or in poor lighting but discernable, prioritize analysis.
+- If "isHuman" is false, provide a kind, poetic reason in "simpleExplanation" (e.g., "I see a silhouette, but the soul's mirror remains dark. Please find better light.").
 
 **AURAS:**
-- Based on the emotional metrics, generate a list of 3 hex colors representing their "Aura".
-- Stress/Anxiety: Warm/Sharp colors (#FF4B2B, #FF416C).
-- Calm/Peace: Cool/Deep colors (#00d2ff, #3a7bd5, #00c6ff).
-- Fatigue: Muted/Deep colors (#2c3e50, #4ca1af).
+- Generate 3 hex colors representing their "Aura" based on emotional metrics.
 
-**MULTIMODAL ANALYSIS:**
-- If audio is provided, listen for stress, fatigue, or masking in the user's voice.
-- Combine facial biometric data with vocal prosody for the final insight.
+**MULTIMODAL:**
+- If audio is provided, combine vocal tone analysis (stress, hesitation) with facial biometrics.
 `;
 
 const RESPONSE_SCHEMA = {
@@ -98,7 +96,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Context: ${context}. Check for a human face. Analyze metrics and vocal tone if provided. Return strictly JSON.` }
+    { text: `Current Context: ${context}. Step 1: Verification. Step 2: Full biometric analysis. Use the system instructions to decode the soul vibe.` }
   ];
 
   if (audio) {
@@ -120,7 +118,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
     if (!response.text) throw new Error("EMPTY_RESPONSE");
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Analysis Error Details:", error);
+    console.error("Deep Analysis Failure:", error);
     throw error;
   }
 };
@@ -129,10 +127,10 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
   if (targetLanguage === 'en') return data;
   
   const langMap: Record<Language, string> = {
-    hi: 'Hindi',
-    te: 'Telugu',
-    ta: 'Tamil',
-    kn: 'Kannada',
+    hi: 'Hindi (हिंदी)',
+    te: 'Telugu (తెలుగు)',
+    ta: 'Tamil (தமிழ்)',
+    kn: 'Kannada (ಕನ್ನಡ)',
     en: 'English'
   };
 
@@ -141,18 +139,31 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Translate the following JSON insight into ${langMap[targetLanguage]}. Keep the tone friendly and wise. Translate all descriptive strings but keep numeric values and enum keys like "isHuman", "vitals", "cognitive", "type", and "impact" exactly the same. Return valid JSON only.\n\nJSON: ${JSON.stringify(data)}` }] },
+      contents: { 
+        parts: [{ 
+          text: `You are a professional translator specializing in psychological and emotional nuances. 
+          Translate the following JSON insight into ${langMap[targetLanguage]}. 
+          RULES:
+          1. Keep all numeric values, boolean keys, and auraColors EXACTLY the same.
+          2. Translate only the human-readable string descriptions.
+          3. Use the formal script for the target language.
+          4. Maintain the kind, supportive, and poetic tone of the original text.
+          5. Ensure the resulting JSON is strictly valid.
+          
+          DATA TO TRANSLATE: ${JSON.stringify(data)}` 
+        }] 
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA
       }
     });
 
-    if (!response.text) throw new Error("EMPTY_TRANSLATION");
+    if (!response.text) throw new Error("TRANSLATION_EMPTY");
     return JSON.parse(response.text) as InsightData;
   } catch (error) {
-    console.error("Translation Error:", error);
-    return data; // Fallback to original
+    console.error("Localization engine failed:", error);
+    return data;
   }
 };
 
@@ -162,23 +173,25 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
-      config: { systemInstruction: `${SYSTEM_INSTRUCTION}\nUser state: ${contextData.neuralEvidence}.` }
+      config: { 
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase conversation on this biometric pattern: ${contextData.neuralEvidence}. User profile is "${contextData.psychProfile}".`
+      }
     });
-    return response.text || "I'm here.";
+    return response.text || "I'm listening closely to your heart.";
   } catch (error) {
-    return "The neural link is unstable.";
+    return "The neural bridge is flickering. I'm here, but my signal is weak.";
   }
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile}`).join('\n');
+  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile} - Stress: ${e.insight.vitals.stress}`).join('\n');
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Generate meta-analysis for:\n${historyText}` }] },
+      contents: { parts: [{ text: `Synthesize this emotional history into a meta-analysis:\n${historyText}` }] },
       config: { 
-        systemInstruction: "Synthesize weekly soul patterns into JSON.", 
+        systemInstruction: "You are a master of emotional synthesis. Create a JSON report summarizing the week's soul trajectory.", 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
