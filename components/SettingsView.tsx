@@ -9,35 +9,6 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const [settings, setSettings] = useState<UserSettings>(getSettings());
-  const [isKeyLinked, setIsKeyLinked] = useState(false);
-  const [aistudioAvailable, setAistudioAvailable] = useState(false);
-
-  useEffect(() => {
-    const checkKey = async () => {
-      const aistudio = (window as any).aistudio;
-      if (aistudio) {
-        setAistudioAvailable(true);
-        const linked = await aistudio.hasSelectedApiKey();
-        setIsKeyLinked(linked);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleLinkKey = async () => {
-    const aistudio = (window as any).aistudio;
-    if (aistudio) {
-      await aistudio.openSelectKey();
-      // guidelines suggest assuming success to mitigate race conditions
-      setIsKeyLinked(true);
-    } else {
-      alert("Official Link selector is only available in the AI Studio environment. Please use the manual input below.");
-    }
-  };
-
-  const handleManualKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateSettings({ customApiKey: e.target.value });
-  };
 
   const handleToggle = async () => {
     if (!('Notification' in window)) {
@@ -63,8 +34,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     saveSettings(newSettings);
   };
 
-  const isConnected = settings.customApiKey.length > 5 || isKeyLinked;
-
   return (
     <div className="w-full max-w-md animate-fade-in pb-10 px-4 sm:px-0">
       
@@ -78,75 +47,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
 
       <div className="space-y-6">
         
-        {/* API KEY MANAGEMENT */}
-        <div className="bg-white/5 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl relative overflow-hidden">
-           {/* Connection Status Indicator */}
-           <div className="flex items-center justify-between mb-6">
-             <div>
-                <h3 className="text-white font-bold text-sm uppercase tracking-widest">Neural Bridge</h3>
-                <p className="text-zinc-500 text-[10px] mt-1">Status: {isConnected ? 'Active' : 'Offline'}</p>
-             </div>
-             <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_12px_#34d399]' : 'bg-red-400 shadow-[0_0_12px_#f87171]'} animate-pulse`}></div>
-           </div>
-
-           <div className="space-y-6">
-              {/* Option A: Manual Paste */}
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Manual API Key</label>
-                <div className="relative group">
-                  <input 
-                    type="password"
-                    value={settings.customApiKey}
-                    onChange={handleManualKeyChange}
-                    placeholder="Paste your Gemini API key here..."
-                    className="w-full bg-black/40 text-white p-4 rounded-xl border border-white/10 focus:outline-none focus:border-white/30 text-xs transition-all placeholder-zinc-700"
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 group-hover:opacity-40 transition-opacity">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3m-3-3l-2.5-2.5"/></svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Separator */}
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/5"></div>
-                <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest">or</span>
-                <div className="h-px flex-1 bg-white/5"></div>
-              </div>
-
-              {/* Option B: Official Link */}
-              <div className="space-y-2">
-                <Button 
-                  onClick={handleLinkKey} 
-                  variant="secondary" 
-                  fullWidth 
-                  className="py-3 border-white/5 hover:bg-white/10"
-                >
-                  {isKeyLinked ? 'Link Update' : 'Link Google Account'}
-                </Button>
-                <p className="text-[9px] text-zinc-600 text-center italic">Best for AI Studio usage</p>
-              </div>
-           </div>
-           
-           <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
-             <a 
-               href="https://aistudio.google.com/app/apikey" 
-               target="_blank" 
-               rel="noreferrer"
-               className="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors"
-             >
-               Get a Key
-             </a>
-             <a 
-               href="https://ai.google.dev/gemini-api/docs/billing" 
-               target="_blank" 
-               rel="noreferrer"
-               className="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors"
-             >
-               Billing Info
-             </a>
-           </div>
-        </div>
+        {/* API KEY MANAGEMENT UI REMOVED AS PER GUIDELINES */}
 
         {/* NOTIFICATION SETTINGS */}
         <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 shadow-2xl">

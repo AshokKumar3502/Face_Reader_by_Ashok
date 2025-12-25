@@ -1,20 +1,23 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight } from "../types";
-import { getSettings } from "./storageService";
+import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Language } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 You are Kosha, a high-precision Self Understanding Assistant.
-Your goal is to help users understand their inner state by analyzing their outer expression.
+Your goal is to help users understand their inner state by analyzing their outer expression (Face) and inner voice (Prosody).
 
 **STRICT RULE: HUMAN FACE ONLY.**
-- If the image does NOT contain a clear human face (e.g., it's a pet, an object, a landscape, or blurry/dark), you MUST set "isHuman" to false.
-- In the case where "isHuman" is false, set "psychProfile" to "Vision Obscured" and provide a friendly explanation in "simpleExplanation" about why you couldn't find a human face (e.g., "I see an object, but no soul to mirror" or "The lens cannot find your features").
-- Only proceed with biometric analysis if a human face is clearly present.
+- If the image does NOT contain a clear human face, you MUST set "isHuman" to false.
 
-**CORE LANGUAGE RULE: NO CLINICAL JARGON.**
-- Speak like a kind, wise friend. 
-- Use simple terms like "tired eyes," "stressed," or "overwhelmed."
+**AURAS:**
+- Based on the emotional metrics, generate a list of 3 hex colors representing their "Aura".
+- Stress/Anxiety: Warm/Sharp colors (#FF4B2B, #FF416C).
+- Calm/Peace: Cool/Deep colors (#00d2ff, #3a7bd5, #00c6ff).
+- Fatigue: Muted/Deep colors (#2c3e50, #4ca1af).
+
+**MULTIMODAL ANALYSIS:**
+- If audio is provided, listen for stress, fatigue, or masking in the user's voice.
+- Combine facial biometric data with vocal prosody for the final insight.
 `;
 
 const RESPONSE_SCHEMA = {
@@ -32,6 +35,7 @@ const RESPONSE_SCHEMA = {
     growthPlan: { type: Type.STRING },
     dailyAction: { type: Type.STRING },
     emotionalScore: { type: Type.INTEGER },
+    auraColors: { type: Type.ARRAY, items: { type: Type.STRING } },
     vitals: {
       type: Type.OBJECT,
       properties: {
@@ -82,40 +86,30 @@ const RESPONSE_SCHEMA = {
   required: [
     "isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "hiddenRealization", 
     "decisionCompass", "relationshipImpact", "currentPattern", "growthPlan", 
-    "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols"
+    "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols", "auraColors"
   ]
 };
 
 const MODEL_NAME = 'gemini-3-flash-preview';
 
-const getActiveApiKey = () => {
-  const settings = getSettings();
-  return settings.customApiKey?.trim() || process.env.API_KEY || '';
-};
-
-export const analyzeInput = async (image: string, context: UserContext): Promise<InsightData> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("AUTH_ERROR");
-
-  const ai = new GoogleGenAI({ apiKey });
-  const base64Data = image.split(',')[1] || image;
+export const analyzeInput = async (image: string, context: UserContext, audio?: string): Promise<InsightData> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const base64Image = image.split(',')[1] || image;
   
-  const contextMap: Record<UserContext, string> = {
-    'WAKING_UP': "User just woke up.",
-    'WORK': "User is currently working.",
-    'EVENING': "User is unwinding in the evening.",
-    'BEFORE_SLEEP': "User is preparing for sleep."
-  };
+  const parts: any[] = [
+    { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+    { text: `Context: ${context}. Check for a human face. Analyze metrics and vocal tone if provided. Return strictly JSON.` }
+  ];
+
+  if (audio) {
+    const base64Audio = audio.split(',')[1] || audio;
+    parts.push({ inlineData: { mimeType: 'audio/webm', data: base64Audio } });
+  }
 
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: {
-        parts: [
-          { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-          { text: `Context: ${contextMap[context]}. Check if a human face is present. If yes, perform a deep biometric and psychological analysis. If no, set isHuman to false and explain why in simpleExplanation. Return strictly valid JSON.` }
-        ]
-      },
+      contents: { parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
@@ -127,70 +121,77 @@ export const analyzeInput = async (image: string, context: UserContext): Promise
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
     console.error("Analysis Error Details:", error);
-    const msg = error.message || "";
-    if (msg.includes('401') || msg.includes('403') || msg.includes('not found')) {
-      throw new Error("AUTH_ERROR");
-    }
     throw error;
   }
 };
 
-export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) return "Authentication error. Please check your API key in Settings.";
+export const translateInsight = async (data: InsightData, targetLanguage: Language): Promise<InsightData> => {
+  if (targetLanguage === 'en') return data;
+  
+  const langMap: Record<Language, string> = {
+    hi: 'Hindi',
+    te: 'Telugu',
+    ta: 'Tamil',
+    kn: 'Kannada',
+    en: 'English'
+  };
 
-  const ai = new GoogleGenAI({ apiKey });
-  const contents = history.map(msg => ({ 
-    role: msg.role === 'model' ? 'model' : 'user', 
-    parts: [{ text: msg.text }] 
-  }));
-
-  try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: contents,
-      config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase your conversation on this state: ${contextData.neuralEvidence}. Keep responses concise and supportive.`
-      }
-    });
-    return response.text || "I'm listening.";
-  } catch (error: any) {
-    console.error("Chat Error:", error);
-    return "I am having trouble connecting to the neural network. Please check your signal or API key.";
-  }
-};
-
-export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("AUTH_ERROR");
-
-  const ai = new GoogleGenAI({ apiKey });
-  const historyText = entries.map(e => `Day ${e.dayNumber}: Stress ${e.insight.vitals.stress}, Vibe: ${e.insight.psychProfile}`).join('\n');
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Summarize this week of emotional data into a meta-analysis: ${historyText}` }] },
-      config: { 
-          systemInstruction: "Synthesize daily entries into a meaningful weekly theme in JSON.", 
-          responseMimeType: "application/json",
-          responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                  weekTitle: { type: Type.STRING },
-                  soulReport: { type: Type.STRING },
-                  emotionalTrend: { type: Type.STRING },
-                  keyRealization: { type: Type.STRING },
-                  nextWeekMantra: { type: Type.STRING }
-              }
-          }
+      contents: { parts: [{ text: `Translate the following JSON insight into ${langMap[targetLanguage]}. Keep the tone friendly and wise. Translate all descriptive strings but keep numeric values and enum keys like "isHuman", "vitals", "cognitive", "type", and "impact" exactly the same. Return valid JSON only.\n\nJSON: ${JSON.stringify(data)}` }] },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: RESPONSE_SCHEMA
       }
     });
-    
-    if (!response.text) throw new Error("EMPTY_REPORT");
-    return JSON.parse(response.text) as WeeklyInsight;
+
+    if (!response.text) throw new Error("EMPTY_TRANSLATION");
+    return JSON.parse(response.text) as InsightData;
   } catch (error) {
-    console.error("Weekly Report Error:", error);
-    throw error;
+    console.error("Translation Error:", error);
+    return data; // Fallback to original
   }
+};
+
+export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
+      config: { systemInstruction: `${SYSTEM_INSTRUCTION}\nUser state: ${contextData.neuralEvidence}.` }
+    });
+    return response.text || "I'm here.";
+  } catch (error) {
+    return "The neural link is unstable.";
+  }
+};
+
+export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile}`).join('\n');
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: { parts: [{ text: `Generate meta-analysis for:\n${historyText}` }] },
+      config: { 
+        systemInstruction: "Synthesize weekly soul patterns into JSON.", 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            weekTitle: { type: Type.STRING },
+            soulReport: { type: Type.STRING },
+            emotionalTrend: { type: Type.STRING },
+            keyRealization: { type: Type.STRING },
+            nextWeekMantra: { type: Type.STRING }
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text) as WeeklyInsight;
+  } catch (error) { throw error; }
 };

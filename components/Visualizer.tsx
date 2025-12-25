@@ -1,7 +1,8 @@
+
 import React from 'react';
 
 interface VisualizerProps {
-  state: 'idle' | 'waiting' | 'analyzing' | 'peaceful';
+  state: 'idle' | 'waiting' | 'analyzing' | 'peaceful' | 'breathing';
 }
 
 export const Visualizer: React.FC<VisualizerProps> = ({ state }) => {
@@ -12,6 +13,7 @@ export const Visualizer: React.FC<VisualizerProps> = ({ state }) => {
       case 'waiting': return 'scale-110 opacity-100';
       case 'analyzing': return 'scale-125 opacity-100';
       case 'peaceful': return 'scale-100 opacity-90';
+      case 'breathing': return 'scale-150 opacity-100 animate-[breathing_10s_ease-in-out_infinite]';
     }
   };
 
@@ -21,6 +23,7 @@ export const Visualizer: React.FC<VisualizerProps> = ({ state }) => {
       case 'waiting': return 'from-cyan-400 to-blue-600 shadow-[0_0_40px_rgba(6,182,212,0.6)]';
       case 'analyzing': return 'from-fuchsia-500 to-indigo-600 shadow-[0_0_50px_rgba(217,70,239,0.7)]';
       case 'peaceful': return 'from-emerald-400 to-teal-600 shadow-[0_0_40px_rgba(16,185,129,0.6)]';
+      case 'breathing': return 'from-emerald-300 via-white to-teal-400 shadow-[0_0_80px_rgba(255,255,255,0.4)]';
     }
   };
 
@@ -30,9 +33,10 @@ export const Visualizer: React.FC<VisualizerProps> = ({ state }) => {
       {/* Spectrum Halo */}
       <div className={`absolute inset-0 rounded-full blur-[60px] sm:blur-[80px] mix-blend-screen animate-[spin_15s_linear_infinite] opacity-60 bg-gradient-to-tr from-fuchsia-600 via-cyan-500 to-amber-400`}></div>
 
-      {/* Layer 2: The Energy Rings (Pulse) */}
-      <div className={`absolute w-48 h-48 sm:w-56 sm:h-56 rounded-full border-2 border-white/20 blur-[1px] animate-[ping_3s_ease-in-out_infinite] opacity-30`}></div>
-      <div className={`absolute w-60 h-60 sm:w-72 sm:h-72 rounded-full border border-white/10 blur-[2px] animate-[ping_5s_ease-in-out_infinite] opacity-20`}></div>
+      {/* Breathing Ring Layer */}
+      {state === 'breathing' && (
+        <div className="absolute inset-0 rounded-full border border-white/40 animate-[ping_4s_linear_infinite] opacity-20"></div>
+      )}
 
       {/* Layer 3: The Vivid Core */}
       <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center">
@@ -46,12 +50,13 @@ export const Visualizer: React.FC<VisualizerProps> = ({ state }) => {
          </div>
       </div>
 
-      {/* State Text Indicator */}
-      {state === 'analyzing' && (
-         <div className="absolute inset-0 flex items-center justify-center animate-spin-slow">
-            <div className="w-full h-0.5 sm:h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-20"></div>
-         </div>
-      )}
+      <style>{`
+        @keyframes breathing {
+          0% { transform: scale(1.0); filter: blur(0px); }
+          40% { transform: scale(1.4); filter: blur(2px); } /* Inhale (4s) */
+          100% { transform: scale(1.0); filter: blur(0px); } /* Exhale (6s) */
+        }
+      `}</style>
     </div>
   );
 };

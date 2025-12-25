@@ -1,20 +1,61 @@
 
 import React, { useState } from 'react';
-import { InsightData, BehavioralProtocol } from '../types';
+import { InsightData, BehavioralProtocol, Language } from '../types';
 import { Button } from './Button';
+import { translateInsight } from '../services/geminiService';
 
 interface InsightCardProps {
   data: InsightData;
   onReset: () => void;
   onChat?: () => void;
+  onSanctuary?: () => void;
   readonly?: boolean;
 }
 
 type ViewMode = 'soul' | 'mind' | 'triggers' | 'guidance';
 
-export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat, readonly = false }) => {
+export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat, onSanctuary, readonly = false }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('soul');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState<Language>('en');
+  const [displayData, setDisplayData] = useState<InsightData>(data);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const languages: { code: Language; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'hi', label: 'हिन्दी' },
+    { code: 'te', label: 'తెలుగు' },
+    { code: 'ta', label: 'தமிழ்' },
+    { code: 'kn', label: 'ಕನ್ನಡ' },
+  ];
+
+  const handleLanguageChange = async (lang: Language) => {
+    if (lang === currentLang || isTranslating) return;
+    
+    if (lang === 'en') {
+      setDisplayData(data);
+      setCurrentLang('en');
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const translated = await translateInsight(data, lang);
+      setDisplayData(translated);
+      setCurrentLang(lang);
+    } catch (e) {
+      console.error("Translation failed", e);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Generative Aura background style
+  const auraStyle = {
+    background: displayData.auraColors ? `radial-gradient(at 0% 0%, ${displayData.auraColors[0]} 0, transparent 50%), 
+                 radial-gradient(at 100% 100%, ${displayData.auraColors[1]} 0, transparent 50%),
+                 radial-gradient(at 50% 50%, ${displayData.auraColors[2]}22 0, transparent 100%)` : 'transparent'
+  };
 
   const VitalBar = ({ label, value, colorClass }: { label: string, value: number, colorClass: string }) => (
     <div className="space-y-1.5">
@@ -23,128 +64,79 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
         <span className="text-white">{value}%</span>
       </div>
       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-        <div 
-          className={`h-full transition-all duration-1000 ease-out ${colorClass}`}
-          style={{ width: `${value}%` }}
-        ></div>
+        <div className={`h-full transition-all duration-1000 ease-out ${colorClass}`} style={{ width: `${value}%` }}></div>
       </div>
     </div>
   );
 
   const getModeLabel = (mode: ViewMode) => {
     switch(mode) {
-      case 'soul': return 'Your feelings';
-      case 'mind': return 'Your energy level';
-      case 'triggers': return 'Why you feel this way';
-      case 'guidance': return 'Daily plan';
+      case 'soul': return currentLang === 'en' ? 'Your feelings' : 'भावनाएं';
+      case 'mind': return currentLang === 'en' ? 'Your energy level' : 'ऊर्जा स्तर';
+      case 'triggers': return currentLang === 'en' ? 'Why you feel this way' : 'कारण';
+      case 'guidance': return currentLang === 'en' ? 'Daily plan' : 'दैनिक योजना';
     }
   };
 
-  const getProtocolIcon = (type: string) => {
-    switch(type) {
-        case 'BREATH': return '🫁';
-        case 'REST': return '🔋';
-        case 'SOCIAL': return '🫂';
-        case 'FOCUS': return '🎯';
-        case 'JOURNAL': return '✍️';
-        default: return '✨';
-    }
-  };
-
-  // --- No Human Face UI ---
-  if (data.isHuman === false) {
+  if (displayData.isHuman === false) {
     return (
-      <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 sm:pb-12">
-        <div className="relative overflow-hidden glass-card rounded-3xl sm:rounded-[3rem] border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.1)]">
-          <div className="bg-black/60 rounded-[1.4rem] sm:rounded-[2.9rem] p-10 text-center relative z-10">
-            <div className="w-24 h-24 mx-auto mb-8 bg-amber-500/10 rounded-full flex items-center justify-center text-4xl animate-pulse">
-              📵
-            </div>
-            <h2 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-4">Signal Lost</h2>
-            <h1 className="text-2xl sm:text-3xl font-serif-display italic text-white mb-6">
-              "Vision Obscured"
-            </h1>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-8 italic">
-              {data.simpleExplanation || "I see an object or a reflection, but I cannot find a human face to mirror. Please ensure you are in a well-lit area and looking directly at the lens."}
-            </p>
-            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Neural Status</p>
-              <p className="text-white text-xs mt-1">Verification Failed: Non-Human Entity Detected</p>
-            </div>
-          </div>
-          {/* Static Effect Overlay */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://media.giphy.com/media/oEI9uWUqnW8Y8/giphy.gif')] bg-cover mix-blend-overlay"></div>
-        </div>
-        <div className="mt-8">
-           <Button onClick={onReset} variant="secondary" fullWidth className="py-5 font-black text-xs uppercase tracking-widest border-white/10">
-              Try Again
-           </Button>
+      <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8">
+        <div className="relative overflow-hidden glass-card rounded-[3rem] p-10 text-center">
+          <h1 className="text-2xl sm:text-3xl font-serif-display italic text-white mb-6">"Vision Obscured"</h1>
+          <p className="text-zinc-400 text-sm italic mb-8">{displayData.simpleExplanation}</p>
+          <Button onClick={onReset} variant="secondary" fullWidth>Try Again</Button>
         </div>
       </div>
     );
   }
 
-  // --- Normal Insight UI ---
   return (
-    <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 sm:pb-12">
-      
-      {!readonly && (
-         <div className="flex justify-center mb-4 sm:mb-6 gap-3">
-           <div className="px-5 py-2 rounded-full rainbow-gradient text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl ring-2 ring-white/20">
-             Self Scan Complete
-           </div>
-           <div className="px-5 py-2 rounded-full bg-black/40 border border-emerald-500/50 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              {data.confidenceScore}% Certain
-           </div>
-         </div>
-      )}
+    <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8 relative">
+      {/* GENERIC AURA OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 blur-[100px] z-0" style={auraStyle}></div>
 
-      <div className="relative overflow-hidden glass-card rounded-3xl sm:rounded-[3rem] p-1 shadow-2xl">
-        <div className="bg-black/40 rounded-[1.4rem] sm:rounded-[2.9rem] p-6 sm:p-10 relative z-10 backdrop-blur-3xl">
+      {/* Language Selector Bridge */}
+      <div className="relative z-30 flex justify-center gap-2 mb-6 overflow-x-auto no-scrollbar pb-2">
+        {languages.map((lang) => (
+          <button
+            key={lang.code}
+            onClick={() => handleLanguageChange(lang.code)}
+            disabled={isTranslating}
+            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+              currentLang === lang.code 
+                ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.4)]' 
+                : 'bg-white/5 text-white/50 border-white/10 hover:border-white/30'
+            } ${isTranslating ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isTranslating && currentLang !== lang.code && currentLang === 'en' ? '...' : lang.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative overflow-hidden glass-card rounded-3xl sm:rounded-[3rem] p-1 shadow-2xl z-10 transition-all duration-500">
+        {isTranslating && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center rounded-[2.9rem] animate-fade-in">
+             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Synthesizing {languages.find(l => l.code === currentLang)?.label}...</p>
+          </div>
+        )}
+        
+        <div className="bg-black/40 rounded-[1.4rem] sm:rounded-[2.9rem] p-6 sm:p-10 backdrop-blur-3xl">
           
-          {/* Main Insight */}
           <div className="mb-6 text-center">
-            <h2 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Your State</h2>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif-display italic text-white leading-tight drop-shadow-2xl">
-              "{data.psychProfile}"
-            </h1>
+            <h2 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">Your Soul Vibe</h2>
+            <h1 className="text-2xl sm:text-4xl font-serif-display italic text-white leading-tight drop-shadow-2xl">"{displayData.psychProfile}"</h1>
           </div>
 
-          {/* DECISION COMPASS */}
-          <div className="mb-6 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-5 flex items-center gap-4 group">
-             <div className="w-10 h-10 rounded-full bg-cyan-400 flex items-center justify-center text-black shadow-lg shrink-0 font-black">🧭</div>
-             <p className="text-white text-xs sm:text-sm font-bold italic leading-tight">
-                {data.decisionCompass}
-             </p>
-          </div>
-
-          {/* VIEW SELECTOR DROPDOWN */}
           <div className="mb-8 relative z-20">
-            <button 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl px-6 py-4 flex items-center justify-between transition-all group"
-            >
-               <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full animate-pulse ${
-                    viewMode === 'soul' ? 'bg-fuchsia-400' : 
-                    viewMode === 'mind' ? 'bg-cyan-400' : 
-                    viewMode === 'triggers' ? 'bg-rose-400' : 'bg-emerald-400'}`}></div>
-                  <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{getModeLabel(viewMode)}</span>
-               </div>
-               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`}>
-                  <path d="M2 4L6 8L10 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-               </svg>
+            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 flex items-center justify-between transition-all">
+               <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{getModeLabel(viewMode)}</span>
+               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={isDropdownOpen ? 'rotate-180' : ''}><path d="M2 4L6 8L10 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-fade-in backdrop-blur-3xl">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50">
                  {(['soul', 'mind', 'triggers', 'guidance'] as ViewMode[]).map(mode => (
-                    <button 
-                      key={mode}
-                      onClick={() => { setViewMode(mode); setIsDropdownOpen(false); }}
-                      className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${viewMode === mode ? 'text-white bg-white/10' : 'text-zinc-500'}`}
-                    >
+                    <button key={mode} onClick={() => { setViewMode(mode); setIsDropdownOpen(false); }} className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 ${viewMode === mode ? 'bg-white/10 text-white' : 'text-zinc-500'}`}>
                       {getModeLabel(mode)}
                     </button>
                  ))}
@@ -152,117 +144,61 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
             )}
           </div>
 
-          {/* CONTENT MODULES */}
-          <div className="mb-8 min-h-[220px]">
-            {viewMode === 'soul' && (
-              <div className="grid grid-cols-1 gap-5 animate-fade-in">
-                <VitalBar label="Current Stress" value={data.vitals.stress} colorClass="bg-red-500" />
-                <VitalBar label="Inner Peace" value={data.vitals.calmness} colorClass="bg-teal-400" />
-                <VitalBar label="Worry Level" value={data.vitals.anxiety} colorClass="bg-orange-400" />
-                <VitalBar label="Body Fatigue" value={data.vitals.fatigue} colorClass="bg-indigo-400" />
-              </div>
-            )}
-
-            {viewMode === 'mind' && (
-              <div className="grid grid-cols-1 gap-5 animate-fade-in">
-                <VitalBar label="Focus Power" value={data.cognitive.focus} colorClass="bg-cyan-400" />
-                <VitalBar label="Awake Level" value={data.cognitive.alertness} colorClass="bg-lime-400" />
-                <VitalBar label="Racing Thoughts" value={data.cognitive.overthinking} colorClass="bg-purple-400" />
-                <VitalBar label="Burnout Risk" value={data.cognitive.burnout} colorClass="bg-rose-400" />
-              </div>
-            )}
-
-            {viewMode === 'triggers' && (
-              <div className="space-y-4 animate-fade-in">
-                {data.stressTriggers.map((trigger, i) => (
-                  <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-5 group hover:bg-white/10 transition-colors">
-                    <div className="flex justify-between items-center mb-2">
-                       <h5 className="text-xs font-black text-white uppercase tracking-widest">{trigger.type}</h5>
-                       <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${
-                          trigger.impact === 'High' ? 'bg-red-500/20 text-red-400' : 
-                          trigger.impact === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
-                       }`}>
-                         {trigger.impact}
-                       </span>
-                    </div>
-                    <p className="text-zinc-400 text-xs italic leading-relaxed">
-                      {trigger.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
+          <div className="mb-8 min-h-[200px]">
+            {viewMode === 'soul' && <div className="space-y-5 animate-fade-in"><VitalBar label="Stress" value={displayData.vitals.stress} colorClass="bg-red-500"/><VitalBar label="Peace" value={displayData.vitals.calmness} colorClass="bg-teal-400"/></div>}
             {viewMode === 'guidance' && (
               <div className="space-y-4 animate-fade-in">
-                {data.behavioralProtocols.map((protocol, i) => (
-                  <div key={i} className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-5 group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">{getProtocolIcon(protocol.type)}</div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <span className="text-lg">{getProtocolIcon(protocol.type)}</span>
-                        <h5 className="text-xs font-black text-emerald-300 uppercase tracking-widest">{protocol.title}</h5>
-                    </div>
-                    <p className="text-white text-xs leading-relaxed mb-3 font-medium">
-                      {protocol.instruction}
-                    </p>
-                    {protocol.duration && (
-                        <div className="inline-flex items-center gap-1.5 text-[8px] font-black text-emerald-500/60 uppercase tracking-widest border border-emerald-500/20 rounded-full px-3 py-1 bg-black/20">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            {protocol.duration}
-                        </div>
+                {displayData.behavioralProtocols.map((protocol, i) => (
+                  <div key={i} className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-5">
+                    <h5 className="text-xs font-black text-emerald-300 uppercase tracking-widest mb-1">{protocol.title}</h5>
+                    <p className="text-white text-xs leading-relaxed">{protocol.instruction}</p>
+                    {protocol.type === 'BREATH' && onSanctuary && (
+                       <button onClick={onSanctuary} className="mt-4 w-full py-3 bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-all">Start Sanctuary Session</button>
                     )}
                   </div>
                 ))}
               </div>
             )}
+            
+            {viewMode === 'triggers' && (
+              <div className="space-y-4 animate-fade-in">
+                {displayData.stressTriggers.map((trigger, i) => (
+                  <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                    <div className="flex justify-between items-center mb-2">
+                       <h5 className="text-[10px] font-black text-white uppercase tracking-widest">{trigger.type}</h5>
+                       <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${trigger.impact === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                         {trigger.impact}
+                       </span>
+                    </div>
+                    <p className="text-zinc-400 text-xs italic leading-relaxed">{trigger.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {viewMode === 'mind' && (
+              <div className="space-y-5 animate-fade-in">
+                <VitalBar label="Focus" value={displayData.cognitive.focus} colorClass="bg-cyan-400"/>
+                <VitalBar label="Burnout Risk" value={displayData.cognitive.burnout} colorClass="bg-rose-400"/>
+              </div>
+            )}
           </div>
 
-          {/* WHAT I SEE ON YOUR FACE */}
-          <div className="mb-8 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl relative group">
-             <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-500 rounded-full text-[8px] font-black text-white uppercase tracking-[0.2em] shadow-lg">What your face says</div>
-             <p className="text-zinc-300 text-xs italic leading-relaxed font-medium">
-               {data.neuralEvidence}
-             </p>
+          <div className="mb-8 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl relative">
+             <div className="absolute -top-3 left-6 px-3 py-1 bg-indigo-500 rounded-full text-[8px] font-black text-white uppercase tracking-[0.2em] shadow-lg">Observation</div>
+             <p className="text-zinc-300 text-xs italic leading-relaxed font-medium">{displayData.neuralEvidence}</p>
           </div>
 
-          {/* HIDDEN TRUTH */}
-          <div className="mb-8 p-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl relative">
-             <div className="absolute -top-3 left-6 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black text-black uppercase tracking-[0.2em] shadow-lg">The Hidden Truth</div>
-             <p className="text-white text-base italic leading-relaxed font-semibold">
-               {data.hiddenRealization}
-             </p>
+          <div className="mb-8 p-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+             <div className="text-[8px] font-black text-amber-500 uppercase tracking-[0.2em] mb-2">The Hidden Truth</div>
+             <p className="text-white text-base italic leading-relaxed font-semibold">{displayData.hiddenRealization}</p>
           </div>
-
-          {/* Simple Explanation */}
-          <div className="mb-8 space-y-3">
-             <h4 className="text-[10px] font-black text-white/30 uppercase tracking-widest">My Summary</h4>
-             <p className="text-white/80 text-xs sm:text-sm leading-relaxed border-l border-white/10 pl-4">
-                {data.simpleExplanation}
-             </p>
-          </div>
-
-          {/* Action Layer */}
-          <div className="bg-gradient-to-br from-indigo-600/20 to-fuchsia-600/20 rounded-2xl p-6 border border-white/10">
-             <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-3">Your Focus Today</h4>
-             <p className="text-white text-sm font-bold mb-2">"{data.growthPlan}"</p>
-             <div className="flex items-center gap-3 text-white/40 text-[10px] uppercase font-black tracking-widest">
-                <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center">✓</span>
-                {data.dailyAction}
-             </div>
-          </div>
-
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 px-2 sm:px-0">
-        {onChat && !readonly && (
-          <Button onClick={onChat} fullWidth className="bg-white text-black py-5 text-xs font-black shadow-2xl uppercase tracking-[0.2em]">
-             Chat with your assistant
-          </Button>
-        )}
-        <Button onClick={onReset} variant="secondary" fullWidth className="py-4 font-black text-[10px] uppercase tracking-widest">
-          {readonly ? "Close" : "Back to Mirror"}
-        </Button>
+      <div className="mt-8 flex flex-col gap-3">
+        {onChat && <Button onClick={onChat} fullWidth className="bg-white text-black py-5">Talk to your Assistant</Button>}
+        <Button onClick={onReset} variant="secondary" fullWidth>Finish Session</Button>
       </div>
     </div>
   );

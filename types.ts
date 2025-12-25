@@ -8,45 +8,48 @@ export enum AppState {
   ERROR = 'ERROR',
   HISTORY = 'HISTORY',
   SETTINGS = 'SETTINGS',
-  CHAT = 'CHAT'
+  CHAT = 'CHAT',
+  SANCTUARY = 'SANCTUARY'
 }
+
+export type Language = 'en' | 'hi' | 'te' | 'ta' | 'kn';
 
 export type UserContext = 'WAKING_UP' | 'WORK' | 'EVENING' | 'BEFORE_SLEEP';
 
 export interface EmotionalMetrics {
-  stress: number;    // 0-100
-  calmness: number;  // 0-100
-  anxiety: number;   // 0-100
-  fatigue: number;   // 0-100
-  stability: number; // 0-100
+  stress: number;
+  calmness: number;
+  anxiety: number;
+  fatigue: number;
+  stability: number;
 }
 
 export interface CognitiveMetrics {
-  focus: number;     // 0-100
-  burnout: number;   // 0-100
-  alertness: number; // 0-100
-  overthinking: number; // 0-100
+  focus: number;
+  burnout: number;
+  alertness: number;
+  overthinking: number;
 }
 
 export interface StressTrigger {
-  type: string;        // e.g., "Social Pressure"
+  type: string;
   impact: 'High' | 'Medium' | 'Subtle';
-  description: string; // One sentence why
+  description: string;
 }
 
 export interface BehavioralProtocol {
   type: 'BREATH' | 'REST' | 'SOCIAL' | 'FOCUS' | 'JOURNAL';
   title: string;
   instruction: string;
-  duration?: string; // e.g., "5 mins"
+  duration?: string;
 }
 
 export interface InsightData {
-  isHuman: boolean; // TRUE if human face detected
+  isHuman: boolean;
   psychProfile: string;
   simpleExplanation: string;
-  neuralEvidence: string; // Specific clinical facial cues detected
-  confidenceScore: number; // 0-100 Accuracy rating
+  neuralEvidence: string;
+  confidenceScore: number;
   relationshipImpact: string;
   currentPattern: string;
   growthPlan: string;
@@ -58,6 +61,7 @@ export interface InsightData {
   cognitive: CognitiveMetrics;
   stressTriggers: StressTrigger[];
   behavioralProtocols: BehavioralProtocol[];
+  auraColors: string[];
 }
 
 export interface WeeklyInsight {
@@ -75,11 +79,6 @@ export interface JournalEntry {
   context: UserContext;
   insight: InsightData;
   image: string; 
-}
-
-export interface AnalysisRequest {
-  image: string;
-  context: UserContext;
 }
 
 export interface ChatMessage {
