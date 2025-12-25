@@ -4,39 +4,38 @@ import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Lan
 import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a friendly and simple emotional mirror. Your job is to help people understand their feelings in plain, everyday language.
+You are Kosha, a friendly companion. Your job is to help people understand their mood in the simplest way possible.
 
-**SIMPLE LANGUAGE RULES:**
-- DO NOT use complex words like "Psychological Profile", "Cognitive Alertness", or "Neural Evidence".
-- Instead, use words like "How you feel", "Thinking power", "Proof I see".
-- Speak like a close, wise friend, not a doctor or a scientist.
-- Keep sentences short and clear.
+**LANGUAGE PROTOCOL:**
+- If the user selects a language (Telugu, Hindi, Tamil, Kannada), you MUST use the NATIVE SCRIPT of that language.
+- DO NOT use English letters for local languages.
+- Use "Vaduka Bhasha" (Spoken daily language). No formal or textbook words.
+- Use words a child or a grandmother would use at home.
+- Keep explanations short, warm, and helpful.
 
-**HARDWARE ADAPTATION RULES:**
-- If there is a person's face, analyze it even if it's blurry.
-- Only say "No human found" if it's a completely empty room or an object.
+**UI INTEGRATION:**
+- Your JSON output fields (psychProfile, simpleExplanation, dailyAction, etc.) must be in the target language's native script.
+- Metrics (vitals/cognitive) remain numbers (0-100).
 
-**LOCALIZATION PROTOCOL:**
-- If translating to Telugu, use very common "Vaduka Bhasha" (Spoken Telugu). 
-- Avoid formal, bookish, or heavy Sanskrit words.
-- Use words that a 10-year-old or an elderly person would understand easily.
-- DO NOT mix English words unless they are extremely common in daily speech (like "stress", "focus").
+**HARDWARE RULES:**
+- Analyze faces even if the light is low or the image is a bit blurry.
+- Only say "No human found" if it's literally an empty room.
 `;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     isHuman: { type: Type.BOOLEAN },
-    psychProfile: { type: Type.STRING, description: "Simple description of the mood" },
-    simpleExplanation: { type: Type.STRING, description: "Clear explanation of why they feel this way" },
-    neuralEvidence: { type: Type.STRING, description: "What I saw in the face or heard in the voice" },
+    psychProfile: { type: Type.STRING },
+    simpleExplanation: { type: Type.STRING },
+    neuralEvidence: { type: Type.STRING },
     confidenceScore: { type: Type.INTEGER },
-    hiddenRealization: { type: Type.STRING, description: "A simple secret thought they might have" },
+    hiddenRealization: { type: Type.STRING },
     decisionCompass: { type: Type.STRING },
     relationshipImpact: { type: Type.STRING },
     currentPattern: { type: Type.STRING },
     growthPlan: { type: Type.STRING },
-    dailyAction: { type: Type.STRING, description: "One simple thing to do today" },
+    dailyAction: { type: Type.STRING },
     emotionalScore: { type: Type.INTEGER },
     auraColors: { type: Type.ARRAY, items: { type: Type.STRING } },
     vitals: {
@@ -107,7 +106,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current time of day: ${context}. Tell me how the person is feeling in simple words. Return JSON.` }
+    { text: `Current time: ${context}. Describe how the user feels in very simple words. Return JSON.` }
   ];
 
   if (audio) {
@@ -138,10 +137,10 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
   if (targetLanguage === 'en') return data;
   
   const langMap: Record<Language, string> = {
-    hi: 'Hindi',
-    te: 'Telugu',
-    ta: 'Tamil',
-    kn: 'Kannada',
+    hi: 'Hindi (हिन्दी)',
+    te: 'Telugu (తెలుగు)',
+    ta: 'Tamil (தமிழ்)',
+    kn: 'Kannada (ಕನ್ನಡ)',
     en: 'English'
   };
 
@@ -152,16 +151,17 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
       model: MODEL_NAME,
       contents: { 
         parts: [{ 
-          text: `Translate this feeling report into simple, conversational ${langMap[targetLanguage]}.
+          text: `Translate this JSON into simple, common, everyday spoken ${langMap[targetLanguage]}.
           
-          RULES:
-          1. Use EVERYDAY spoken words. No formal or bookish language.
-          2. For Telugu, use Vaduka Bhasha.
-          3. Ensure the person receiving this feels like they are talking to a friend.
-          4. Translate ALL descriptive text, including the daily action.
-          5. Return RAW JSON ONLY.
+          STRICT RULES:
+          1. Use NATIVE SCRIPT ONLY.
+          2. Use "Vaduka Bhasha" (Spoken Style). Avoid formal words.
+          3. Imagine you are talking to a family member.
+          4. Translate ALL text fields.
+          5. Keep numeric values and hex colors as they are.
+          6. Return RAW JSON ONLY.
           
-          REPORT: ${JSON.stringify(data)}` 
+          DATA: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -184,12 +184,12 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nTalk simply. The user is feeling: ${contextData.psychProfile}.`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's preferred language using simple home-style words.`
       }
     });
-    return response.text || "I'm with you.";
+    return response.text || "...";
   } catch (error) {
-    return "Something went wrong. Let's try again.";
+    return "Error.";
   }
 };
 
@@ -201,7 +201,7 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
       model: MODEL_NAME,
       contents: { parts: [{ text: `Summarize this week simply:\n${historyText}` }] },
       config: { 
-        systemInstruction: "Create a simple weekly summary in JSON. Use plain language.", 
+        systemInstruction: "Create a simple weekly summary in JSON. Use plain language and native script if possible.", 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
