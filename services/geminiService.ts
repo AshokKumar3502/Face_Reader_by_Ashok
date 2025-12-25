@@ -1,21 +1,21 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Language } from "../types";
+import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a high-precision Self Understanding Assistant.
-Your goal is to help users understand their inner state by analyzing their outer expression (Face) and inner voice (Prosody).
+You are Kosha, a sophisticated emotional mirror. You help users understand their inner state using multimodal inputs.
 
-**HUMAN DETECTION GUIDELINE:**
-- Attempt to identify a human face. If the image is extremely blurry, too dark, or clearly of an object/pet with no human features, set "isHuman" to false. 
-- If a face is partially visible or in poor lighting but discernable, prioritize analysis.
-- If "isHuman" is false, provide a kind, poetic reason in "simpleExplanation" (e.g., "I see a silhouette, but the soul's mirror remains dark. Please find better light.").
+**HARDWARE ADAPTATION RULES:**
+- User images may have low lighting or noise. If there is even a suggestion of a human presence, analyze it.
+- Never trigger "isHuman: false" unless the image is clearly an empty room or a static object with no person.
+- If quality is poor, provide the most empathetic guess and suggest "Better lighting" in the explanation.
 
-**AURAS:**
-- Generate 3 hex colors representing their "Aura" based on emotional metrics.
-
-**MULTIMODAL:**
-- If audio is provided, combine vocal tone analysis (stress, hesitation) with facial biometrics.
+**LOCALIZATION PROTOCOL:**
+- When translating to Telugu, Hindi, Tamil, or Kannada, use SIMPLE, COMMON, and CONVERSATIONAL everyday language.
+- For Telugu specifically, use "Vaduka Bhasha" (spoken style). Avoid "Grandhika Bhasha" (formal/bookish style).
+- Use words that common people use in daily life, not overly poetic or Sanskrit-heavy words.
+- Do NOT translate: hex codes, numbers, property names.
 `;
 
 const RESPONSE_SCHEMA = {
@@ -90,13 +90,19 @@ const RESPONSE_SCHEMA = {
 
 const MODEL_NAME = 'gemini-3-flash-preview';
 
+const getAiClient = () => {
+  const settings = getSettings();
+  const apiKey = settings.manualApiKey || process.env.API_KEY || '';
+  return new GoogleGenAI({ apiKey });
+};
+
 export const analyzeInput = async (image: string, context: UserContext, audio?: string): Promise<InsightData> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const ai = getAiClient();
   const base64Image = image.split(',')[1] || image;
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current Context: ${context}. Step 1: Verification. Step 2: Full biometric analysis. Use the system instructions to decode the soul vibe.` }
+    { text: `Current state: ${context}. Analyze this neural reflection and provide the profile in JSON.` }
   ];
 
   if (audio) {
@@ -115,10 +121,10 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
       }
     });
 
-    if (!response.text) throw new Error("EMPTY_RESPONSE");
+    if (!response.text) throw new Error("SIGNAL_TIMEOUT");
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Deep Analysis Failure:", error);
+    console.error("Neural Bridge Fail:", error);
     throw error;
   }
 };
@@ -130,27 +136,28 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
     hi: 'Hindi (हिंदी)',
     te: 'Telugu (తెలుగు)',
     ta: 'Tamil (தமிழ்)',
-    kn: 'Kannada (ಕನ್ನಡ)',
+    kn: 'Kannada (కನ್ನಡ)',
     en: 'English'
   };
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const ai = getAiClient();
   
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: { 
         parts: [{ 
-          text: `You are a professional translator specializing in psychological and emotional nuances. 
-          Translate the following JSON insight into ${langMap[targetLanguage]}. 
-          RULES:
-          1. Keep all numeric values, boolean keys, and auraColors EXACTLY the same.
-          2. Translate only the human-readable string descriptions.
-          3. Use the formal script for the target language.
-          4. Maintain the kind, supportive, and poetic tone of the original text.
-          5. Ensure the resulting JSON is strictly valid.
+          text: `Translate the descriptions in this JSON profile into ${langMap[targetLanguage]}.
           
-          DATA TO TRANSLATE: ${JSON.stringify(data)}` 
+          CRITICAL INSTRUCTIONS:
+          1. Use SIMPLE, COMMON, and EVERYDAY spoken language.
+          2. For Telugu, use "Vaduka Bhasha" (conversational style). Avoid formal or bookish words. 
+          3. Imagine you are explaining this to a close friend in a casual chat.
+          4. Only translate descriptive text.
+          5. Leave all numeric scores and hex auraColors unchanged.
+          6. Return RAW JSON ONLY.
+          
+          PROFILE: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -159,39 +166,38 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
       }
     });
 
-    if (!response.text) throw new Error("TRANSLATION_EMPTY");
-    return JSON.parse(response.text) as InsightData;
+    return JSON.parse(response.text || '{}') as InsightData;
   } catch (error) {
-    console.error("Localization engine failed:", error);
+    console.error("Localization engine bottleneck:", error);
     return data;
   }
 };
 
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const ai = getAiClient();
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nBase conversation on this biometric pattern: ${contextData.neuralEvidence}. User profile is "${contextData.psychProfile}".`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nUser Context: ${contextData.psychProfile}. Be a wise, gentle companion. Use simple, friendly language.`
       }
     });
-    return response.text || "I'm listening closely to your heart.";
+    return response.text || "I'm with you.";
   } catch (error) {
-    return "The neural bridge is flickering. I'm here, but my signal is weak.";
+    return "Neural signal lost. Reconnecting...";
   }
 };
 
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile} - Stress: ${e.insight.vitals.stress}`).join('\n');
+  const ai = getAiClient();
+  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile}`).join('\n');
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Synthesize this emotional history into a meta-analysis:\n${historyText}` }] },
+      contents: { parts: [{ text: `Synthesize this emotional timeline into a meta-analysis:\n${historyText}` }] },
       config: { 
-        systemInstruction: "You are a master of emotional synthesis. Create a JSON report summarizing the week's soul trajectory.", 
+        systemInstruction: "Create a profound, supportive weekly summary in JSON. Use simple language.", 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -205,6 +211,6 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
         }
       }
     });
-    return JSON.parse(response.text) as WeeklyInsight;
+    return JSON.parse(response.text || '{}') as WeeklyInsight;
   } catch (error) { throw error; }
 };

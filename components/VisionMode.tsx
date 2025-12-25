@@ -14,6 +14,8 @@ export const VisionMode: React.FC<VisionModeProps> = ({ context, onCapture, onCa
   const [isRecording, setIsRecording] = useState(false);
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [calibrationProgress, setCalibrationProgress] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,21 +27,40 @@ export const VisionMode: React.FC<VisionModeProps> = ({ context, onCapture, onCa
       const startCamera = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'user' }, 
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, 
             audio: true 
           });
           streamRef.current = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
-            // Force play for mobile compatibility
             videoRef.current.onloadedmetadata = () => {
-              videoRef.current?.play().catch(e => console.error("Video play failed", e));
-              setIsCameraReady(true);
+              videoRef.current?.play().then(() => {
+                // Multi-stage Hardware Verification
+                let checkAttempts = 0;
+                const checkReady = setInterval(() => {
+                  checkAttempts++;
+                  // Update calibration UI progress
+                  setCalibrationProgress(Math.min(checkAttempts * 10, 100));
+
+                  if (videoRef.current && videoRef.current.readyState >= 3 && videoRef.current.videoWidth > 0) {
+                    // Small additional delay for sensor exposure adjustment
+                    setTimeout(() => {
+                      setIsCameraReady(true);
+                      setCalibrationProgress(100);
+                      clearInterval(checkReady);
+                    }, 800);
+                  }
+                  
+                  if (checkAttempts > 50) { // Timeout after 5 seconds
+                    clearInterval(checkReady);
+                    setMode('upload');
+                  }
+                }, 100);
+              }).catch(e => console.error("Hardware Play Error", e));
             };
           }
         } catch (err) { 
-          console.error("Camera access denied or failed", err);
-          alert("Please enable camera permissions to use Kosha.");
+          console.error("Camera Hardware Access Denied:", err);
           setMode('upload');
         }
       };
@@ -68,13 +89,8 @@ export const VisionMode: React.FC<VisionModeProps> = ({ context, onCapture, onCa
         };
         mediaRecorder.start();
         setIsRecording(true);
-        // Automatically stop recording after 7 seconds for efficiency
-        setTimeout(() => {
-          if (mediaRecorderRef.current?.state === 'recording') stopRecording();
-        }, 7000);
-      } catch (err) {
-        console.error("Audio recording failed", err);
-      }
+        setTimeout(() => { if (mediaRecorderRef.current?.state === 'recording') stopRecording(); }, 6000);
+      } catch (err) { console.error("Neural Voice Sync Error", err); }
     } else {
       stopRecording();
     }
@@ -88,86 +104,104 @@ export const VisionMode: React.FC<VisionModeProps> = ({ context, onCapture, onCa
   };
 
   const handleCapture = () => {
-    if (videoRef.current && canvasRef.current && isCameraReady) {
+    if (videoRef.current && canvasRef.current && isCameraReady && !isCapturing) {
+      setIsCapturing(true);
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
+        
+        // Final frame extraction
         ctx.drawImage(videoRef.current, 0, 0);
-        const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.8);
+        
+        // Deep verification: ensures image is not black
+        const pixelData = ctx.getImageData(0, 0, 10, 10).data;
+        let sum = 0;
+        for (let i = 0; i < pixelData.length; i += 4) {
+          sum += pixelData[i] + pixelData[i+1] + pixelData[i+2];
+        }
+        
+        if (sum === 0) {
+          alert("Mirror check failed. Re-syncing hardware...");
+          setIsCapturing(false);
+          setIsCameraReady(false);
+          // Force a small reload/re-warmup if blank
+          return;
+        }
+
+        const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
         onCapture(dataUrl, 1, audioBase64 || undefined);
       }
-    } else if (mode === 'upload') {
-       // Placeholder for file input logic
-       alert("Please use the Camera mode for real-time analysis.");
-    } else {
-       alert("Camera is still warming up. Please wait a moment.");
+    } else if (!isCameraReady) {
+       alert("Lens is still calibrating. Please wait...");
     }
   };
 
   return (
-    <div className="w-full max-w-md flex flex-col items-center gap-6 animate-fade-in z-20 px-2 sm:px-0">
-      <div className="flex w-full bg-white/5 backdrop-blur-xl p-1 rounded-xl border border-white/10">
-         <button onClick={() => setMode('camera')} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'camera' ? 'bg-white/10 text-white shadow-md' : 'text-zinc-500 hover:text-white/60'}`}>Camera</button>
-         <button onClick={() => setMode('upload')} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'upload' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white/60'}`}>Upload</button>
+    <div className="w-full max-w-md flex flex-col items-center gap-6 animate-fade-in z-20 px-4 sm:px-0">
+      <div className="flex w-full bg-white/5 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-lg">
+         <button onClick={() => setMode('camera')} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'camera' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white/60'}`}>Live Mirror</button>
+         <button onClick={() => setMode('upload')} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'upload' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white/60'}`}>File Sync</button>
       </div>
 
-      <div className="relative w-full aspect-[4/5] bg-black rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10">
+      <div className="relative w-full aspect-[4/5] bg-black rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 group">
         {mode === 'camera' ? (
           <>
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline 
-              muted 
-              className="w-full h-full object-cover mirror-mode" 
-            />
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror-mode transition-opacity duration-1000" style={{ opacity: isCameraReady ? 1 : 0.3 }} />
             {!isCameraReady && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
+                <div className="relative w-12 h-12 mb-6">
+                   <div className="absolute inset-0 border-2 border-white/10 rounded-full"></div>
+                   <div className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.5em] animate-pulse">Calibrating Lens...</p>
+                <div className="mt-4 w-32 h-[1px] bg-white/5 overflow-hidden">
+                   <div className="h-full bg-white transition-all duration-300" style={{ width: `${calibrationProgress}%` }}></div>
+                </div>
               </div>
             )}
+            <div className="absolute inset-0 pointer-events-none border-[12px] border-black/10 transition-opacity group-hover:opacity-0 opacity-100"></div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-10 text-center">
-             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">☁️</div>
-             <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest">Select an image from your device</p>
-             <input type="file" accept="image/*" className="mt-4 text-[10px] text-white/40 font-black cursor-pointer" />
+          <div className="w-full h-full flex flex-col items-center justify-center p-10 text-center bg-zinc-900/40">
+             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 text-3xl border border-white/10 shadow-2xl animate-pulse">📸</div>
+             <input type="file" accept="image/*" onChange={(e) => {
+               const file = e.target.files?.[0];
+               if (file) {
+                 const reader = new FileReader();
+                 reader.onloadend = () => onCapture(reader.result as string, 1);
+                 reader.readAsDataURL(file);
+               }
+             }} className="text-[10px] text-white/40 font-black cursor-pointer bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors w-full" />
+             <p className="mt-4 text-[9px] text-zinc-600 uppercase tracking-[0.3em] font-black">Neural Import Pattern</p>
           </div>
         )}
         
         <canvas ref={canvasRef} className="hidden" />
         
-        {/* Voice Trigger */}
-        {mode === 'camera' && (
-          <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-3 pointer-events-none">
+        {mode === 'camera' && isCameraReady && (
+          <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-4 pointer-events-none">
              <button 
                onClick={(e) => { e.preventDefault(); toggleRecording(); }} 
-               className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-2xl ${isRecording ? 'bg-red-500 animate-pulse scale-110' : audioBase64 ? 'bg-emerald-500 border-2 border-white/20' : 'bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20'}`}
+               className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center transition-all ${isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-[0_0_20px_rgba(239,68,68,0.5)]' : audioBase64 ? 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20'}`}
              >
-                {isRecording ? (
-                  <div className="w-4 h-4 bg-white rounded-sm"></div>
-                ) : audioBase64 ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                ) : (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 1v10m0 0a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v3a3 3 0 0 0 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2m7 11v-3"/></svg>
-                )}
+                {isRecording ? <div className="w-4 h-4 bg-white rounded-sm"></div> : audioBase64 ? <span className="text-white text-xl">✓</span> : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 1v10m0 0a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v3a3 3 0 0 0 3 3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2m7 11v-3"/></svg>}
              </button>
-             <span className="text-[9px] font-black uppercase text-white/60 tracking-[0.3em] drop-shadow-md">
-               {isRecording ? "Listening..." : audioBase64 ? "Vocal Signature Captured" : "Hold to add voice (Optional)"}
+             <span className="text-[9px] font-black uppercase text-white/40 tracking-[0.4em] drop-shadow-lg">
+               {isRecording ? "Recording Soul..." : audioBase64 ? "Vocal DNA Cached" : "Voice Signature"}
              </span>
           </div>
         )}
       </div>
 
       <div className="flex w-full gap-4">
-        <Button variant="secondary" onClick={onCancel} className="flex-1">Cancel</Button>
-        <Button onClick={handleCapture} disabled={mode === 'camera' && !isCameraReady} fullWidth className="flex-[2] py-5">Analyze Reflection</Button>
+        <Button variant="secondary" onClick={onCancel} className="flex-1 py-5 opacity-60 hover:opacity-100">Cancel</Button>
+        <Button onClick={handleCapture} disabled={(mode === 'camera' && !isCameraReady) || isCapturing} fullWidth className="flex-[2] py-5 shadow-[0_20px_40px_-15px_rgba(79,70,229,0.4)]">
+          {isCapturing ? "Processing..." : isCameraReady ? "Synthesize Reflection" : "Warming Up..."}
+        </Button>
       </div>
       
-      <style>{`
-        .mirror-mode { transform: scaleX(-1); }
-      `}</style>
+      <style>{` .mirror-mode { transform: scaleX(-1); } `}</style>
     </div>
   );
 };
