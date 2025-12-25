@@ -4,34 +4,39 @@ import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Lan
 import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a sophisticated emotional mirror. You help users understand their inner state using multimodal inputs.
+You are Kosha, a friendly and simple emotional mirror. Your job is to help people understand their feelings in plain, everyday language.
+
+**SIMPLE LANGUAGE RULES:**
+- DO NOT use complex words like "Psychological Profile", "Cognitive Alertness", or "Neural Evidence".
+- Instead, use words like "How you feel", "Thinking power", "Proof I see".
+- Speak like a close, wise friend, not a doctor or a scientist.
+- Keep sentences short and clear.
 
 **HARDWARE ADAPTATION RULES:**
-- User images may have low lighting or noise. If there is even a suggestion of a human presence, analyze it.
-- Never trigger "isHuman: false" unless the image is clearly an empty room or a static object with no person.
-- If quality is poor, provide the most empathetic guess and suggest "Better lighting" in the explanation.
+- If there is a person's face, analyze it even if it's blurry.
+- Only say "No human found" if it's a completely empty room or an object.
 
 **LOCALIZATION PROTOCOL:**
-- When translating to Telugu, Hindi, Tamil, or Kannada, use SIMPLE, COMMON, and CONVERSATIONAL everyday language.
-- For Telugu specifically, use "Vaduka Bhasha" (spoken style). Avoid "Grandhika Bhasha" (formal/bookish style).
-- Use words that common people use in daily life, not overly poetic or Sanskrit-heavy words.
-- Do NOT translate: hex codes, numbers, property names.
+- If translating to Telugu, use very common "Vaduka Bhasha" (Spoken Telugu). 
+- Avoid formal, bookish, or heavy Sanskrit words.
+- Use words that a 10-year-old or an elderly person would understand easily.
+- DO NOT mix English words unless they are extremely common in daily speech (like "stress", "focus").
 `;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     isHuman: { type: Type.BOOLEAN },
-    psychProfile: { type: Type.STRING },
-    simpleExplanation: { type: Type.STRING },
-    neuralEvidence: { type: Type.STRING },
+    psychProfile: { type: Type.STRING, description: "Simple description of the mood" },
+    simpleExplanation: { type: Type.STRING, description: "Clear explanation of why they feel this way" },
+    neuralEvidence: { type: Type.STRING, description: "What I saw in the face or heard in the voice" },
     confidenceScore: { type: Type.INTEGER },
-    hiddenRealization: { type: Type.STRING },
+    hiddenRealization: { type: Type.STRING, description: "A simple secret thought they might have" },
     decisionCompass: { type: Type.STRING },
     relationshipImpact: { type: Type.STRING },
     currentPattern: { type: Type.STRING },
     growthPlan: { type: Type.STRING },
-    dailyAction: { type: Type.STRING },
+    dailyAction: { type: Type.STRING, description: "One simple thing to do today" },
     emotionalScore: { type: Type.INTEGER },
     auraColors: { type: Type.ARRAY, items: { type: Type.STRING } },
     vitals: {
@@ -102,7 +107,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current state: ${context}. Analyze this neural reflection and provide the profile in JSON.` }
+    { text: `Current time of day: ${context}. Tell me how the person is feeling in simple words. Return JSON.` }
   ];
 
   if (audio) {
@@ -133,10 +138,10 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
   if (targetLanguage === 'en') return data;
   
   const langMap: Record<Language, string> = {
-    hi: 'Hindi (हिंदी)',
-    te: 'Telugu (తెలుగు)',
-    ta: 'Tamil (தமிழ்)',
-    kn: 'Kannada (కನ್ನಡ)',
+    hi: 'Hindi',
+    te: 'Telugu',
+    ta: 'Tamil',
+    kn: 'Kannada',
     en: 'English'
   };
 
@@ -147,17 +152,16 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
       model: MODEL_NAME,
       contents: { 
         parts: [{ 
-          text: `Translate the descriptions in this JSON profile into ${langMap[targetLanguage]}.
+          text: `Translate this feeling report into simple, conversational ${langMap[targetLanguage]}.
           
-          CRITICAL INSTRUCTIONS:
-          1. Use SIMPLE, COMMON, and EVERYDAY spoken language.
-          2. For Telugu, use "Vaduka Bhasha" (conversational style). Avoid formal or bookish words. 
-          3. Imagine you are explaining this to a close friend in a casual chat.
-          4. Only translate descriptive text.
-          5. Leave all numeric scores and hex auraColors unchanged.
-          6. Return RAW JSON ONLY.
+          RULES:
+          1. Use EVERYDAY spoken words. No formal or bookish language.
+          2. For Telugu, use Vaduka Bhasha.
+          3. Ensure the person receiving this feels like they are talking to a friend.
+          4. Translate ALL descriptive text, including the daily action.
+          5. Return RAW JSON ONLY.
           
-          PROFILE: ${JSON.stringify(data)}` 
+          REPORT: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -168,7 +172,7 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
 
     return JSON.parse(response.text || '{}') as InsightData;
   } catch (error) {
-    console.error("Localization engine bottleneck:", error);
+    console.error("Translation fail:", error);
     return data;
   }
 };
@@ -180,12 +184,12 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nUser Context: ${contextData.psychProfile}. Be a wise, gentle companion. Use simple, friendly language.`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nTalk simply. The user is feeling: ${contextData.psychProfile}.`
       }
     });
     return response.text || "I'm with you.";
   } catch (error) {
-    return "Neural signal lost. Reconnecting...";
+    return "Something went wrong. Let's try again.";
   }
 };
 
@@ -195,9 +199,9 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Synthesize this emotional timeline into a meta-analysis:\n${historyText}` }] },
+      contents: { parts: [{ text: `Summarize this week simply:\n${historyText}` }] },
       config: { 
-        systemInstruction: "Create a profound, supportive weekly summary in JSON. Use simple language.", 
+        systemInstruction: "Create a simple weekly summary in JSON. Use plain language.", 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

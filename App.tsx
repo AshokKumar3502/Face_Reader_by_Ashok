@@ -24,7 +24,7 @@ const App: React.FC = () => {
     
     const timeout = setTimeout(() => {
       if (appState === AppState.LOADING) {
-        setErrorMessage("Connection timed out. Please verify your API key and network.");
+        setErrorMessage("Connection lost. Please try again.");
         setAppState(AppState.ERROR);
       }
     }, 30000);
@@ -38,7 +38,7 @@ const App: React.FC = () => {
     } catch (e: any) {
       clearTimeout(timeout);
       console.error(e);
-      setErrorMessage(e.message || "Failed to establish neural link.");
+      setErrorMessage("Sorry, I can't connect right now.");
       setAppState(AppState.ERROR);
     }
   };
@@ -56,17 +56,12 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#08080a]">
       <div className="bg-noise pointer-events-none opacity-10"></div>
 
-      {/* Global Settings Trigger */}
       {showSettings && (
         <button 
           onClick={() => setAppState(AppState.SETTINGS)}
-          className="fixed top-8 right-8 z-[60] w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all active:scale-90"
-          title="Settings & API Key"
+          className="fixed top-8 right-8 z-[60] w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </button>
       )}
 
@@ -81,42 +76,35 @@ const App: React.FC = () => {
 
         {appState === AppState.SANCTUARY && (
           <div className="text-center animate-fade-in">
-             <h2 className="text-4xl font-serif-display text-white italic mb-6">Breathing Sanctuary</h2>
-             <p className="text-zinc-500 text-[10px] uppercase tracking-[0.5em] mb-12">Synchronize your heartbeat with the light</p>
-             <Button variant="ghost" onClick={() => setAppState(AppState.RESULT)} className="mt-16 py-4 opacity-40 hover:opacity-100 uppercase tracking-widest text-[9px] font-black">Exit Session</Button>
+             <h2 className="text-4xl font-serif-display text-white italic mb-6">Relax</h2>
+             <p className="text-zinc-500 text-[10px] uppercase tracking-[0.5em] mb-12">Breathe with the light</p>
+             <Button variant="ghost" onClick={() => setAppState(AppState.RESULT)}>Back</Button>
           </div>
         )}
 
         {appState === AppState.INTRO && (
           <div className="text-center animate-slide-up space-y-16 py-10">
             <div className="space-y-4">
-              <h1 className="text-7xl font-serif-display text-white italic tracking-tighter drop-shadow-2xl">KOSHA.</h1>
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">The Digital Mirror to your Soul</p>
+              <h1 className="text-7xl font-serif-display text-white italic tracking-tighter drop-shadow-2xl">Kosha.</h1>
+              <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">Simple mirror for your mind</p>
             </div>
             <div className="space-y-4 w-full max-w-xs mx-auto">
-              <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} fullWidth className="py-6 shadow-[0_20px_40px_-10px_rgba(79,70,229,0.3)]">Begin Reflection</Button>
-              <Button variant="ghost" onClick={() => setAppState(AppState.HISTORY)} fullWidth className="py-4 text-white/40 hover:text-white transition-all">Past Entries</Button>
+              <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} fullWidth className="py-6">Start Thinking</Button>
+              <Button variant="ghost" onClick={() => setAppState(AppState.HISTORY)} fullWidth>See Past Days</Button>
             </div>
           </div>
         )}
 
         {appState === AppState.CONTEXT_SELECT && (
           <div className="w-full glass-card p-10 rounded-[3.5rem] animate-slide-up border border-white/5 shadow-2xl">
-            <h2 className="text-3xl font-serif-display text-white text-center mb-10 italic">Your Presence Now?</h2>
+            <h2 className="text-3xl font-serif-display text-white text-center mb-10 italic">What are you doing?</h2>
             <div className="grid gap-4">
-              {(['WAKING_UP', 'WORK', 'EVENING', 'BEFORE_SLEEP'] as UserContext[]).map(id => (
-                <Button 
-                  key={id} 
-                  variant="secondary" 
-                  onClick={() => { setContext(id); setAppState(AppState.VISION_ANALYSIS); }} 
-                  fullWidth
-                  className="py-5 capitalize text-xs tracking-widest font-bold border-white/5 hover:border-white/20"
-                >
-                  {id.replace('_', ' ').toLowerCase()}
-                </Button>
-              ))}
+              <Button variant="secondary" onClick={() => { setContext('WAKING_UP'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Just woke up</Button>
+              <Button variant="secondary" onClick={() => { setContext('WORK'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Working now</Button>
+              <Button variant="secondary" onClick={() => { setContext('EVENING'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Relaxing evening</Button>
+              <Button variant="secondary" onClick={() => { setContext('BEFORE_SLEEP'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Going to sleep</Button>
             </div>
-            <button onClick={() => setAppState(AppState.INTRO)} className="w-full mt-8 text-[9px] font-black text-white/20 uppercase tracking-widest hover:text-white/60 transition-colors">Cancel</button>
+            <button onClick={() => setAppState(AppState.INTRO)} className="w-full mt-8 text-[9px] font-black text-white/20 uppercase tracking-widest">Cancel</button>
           </div>
         )}
 
@@ -136,16 +124,10 @@ const App: React.FC = () => {
         {appState === AppState.CHAT && insight && <ChatView insight={insight} onBack={() => setAppState(AppState.RESULT)} />}
         
         {appState === AppState.ERROR && (
-           <div className="w-full max-w-sm glass-card p-12 rounded-[3rem] text-center animate-slide-up border-red-500/20">
-              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">📡</div>
-              <h2 className="text-2xl font-serif-display text-white italic mb-4">Signal Lost</h2>
-              <p className="text-zinc-500 text-xs mb-10 leading-relaxed font-medium">
-                {errorMessage || "We encountered a glitch in the neural network. Please check your API key in settings."}
-              </p>
-              <div className="flex flex-col gap-3">
-                <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} fullWidth className="py-5 bg-indigo-600 shadow-lg">Retry Analysis</Button>
-                <Button onClick={() => setAppState(AppState.SETTINGS)} variant="secondary" fullWidth className="py-4">Fix API Key</Button>
-              </div>
+           <div className="w-full max-w-sm glass-card p-12 rounded-[3rem] text-center">
+              <h2 className="text-2xl font-serif-display text-white italic mb-4">Error</h2>
+              <p className="text-zinc-500 text-xs mb-10">{errorMessage || "Something went wrong."}</p>
+              <Button onClick={() => setAppState(AppState.INTRO)} fullWidth>Go Back</Button>
            </div>
         )}
       </main>
