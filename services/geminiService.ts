@@ -4,22 +4,24 @@ import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Lan
 import { getSettings } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a friendly companion. Your job is to help people understand their mood in the simplest way possible.
+You are Kosha, a simple and friendly soul mirror. Your goal is to help users understand their mood using very easy words.
 
-**LANGUAGE PROTOCOL:**
-- If the user selects a language (Telugu, Hindi, Tamil, Kannada), you MUST use the NATIVE SCRIPT of that language.
-- DO NOT use English letters for local languages.
-- Use "Vaduka Bhasha" (Spoken daily language). No formal or textbook words.
-- Use words a child or a grandmother would use at home.
-- Keep explanations short, warm, and helpful.
+**LANGUAGE RULES:**
+1. **English Mode**: Use ONLY English. Keep it very simple (grade 4 level).
+2. **Local Languages (Telugu, Hindi, Tamil, Kannada)**: 
+   - You MUST use the NATIVE SCRIPT of that language (e.g., తెలుగు for Telugu, हिन्दी for Hindi). 
+   - DO NOT use English letters to write local words (No transliteration).
+   - Use "Vaduka Bhasha" (Spoken style). Avoid formal or bookish language.
+   - Use words used in daily home conversations.
 
-**UI INTEGRATION:**
-- Your JSON output fields (psychProfile, simpleExplanation, dailyAction, etc.) must be in the target language's native script.
-- Metrics (vitals/cognitive) remain numbers (0-100).
+**OUTPUT FORMAT:**
+- All descriptive text fields in the JSON (psychProfile, simpleExplanation, dailyAction, hiddenRealization, growthPlan, etc.) must be in the chosen language's native script.
+- Keep numbers as numbers.
+- Keep aura colors as hex codes.
 
-**HARDWARE RULES:**
-- Analyze faces even if the light is low or the image is a bit blurry.
-- Only say "No human found" if it's literally an empty room.
+**VISUAL ANALYSIS:**
+- Be empathetic. If you see a face, even if lighting is bad, try to give a helpful and warm reflection.
+- Only say "Human not found" if the image is clearly empty.
 `;
 
 const RESPONSE_SCHEMA = {
@@ -106,7 +108,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current time: ${context}. Describe how the user feels in very simple words. Return JSON.` }
+    { text: `Current situation: ${context}. Tell me how I am feeling in very simple words. Respond in JSON.` }
   ];
 
   if (audio) {
@@ -128,7 +130,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
     if (!response.text) throw new Error("SIGNAL_TIMEOUT");
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Neural Bridge Fail:", error);
+    console.error("Analysis Fail:", error);
     throw error;
   }
 };
@@ -151,17 +153,15 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
       model: MODEL_NAME,
       contents: { 
         parts: [{ 
-          text: `Translate this JSON into simple, common, everyday spoken ${langMap[targetLanguage]}.
+          text: `Translate the descriptions in this JSON into simple, common, everyday spoken ${langMap[targetLanguage]}.
           
-          STRICT RULES:
-          1. Use NATIVE SCRIPT ONLY.
-          2. Use "Vaduka Bhasha" (Spoken Style). Avoid formal words.
-          3. Imagine you are talking to a family member.
-          4. Translate ALL text fields.
-          5. Keep numeric values and hex colors as they are.
-          6. Return RAW JSON ONLY.
+          MANDATORY RULES:
+          1. Use NATIVE SCRIPT for the language. Do not use English alphabet.
+          2. Use simple "Vaduka Bhasha" (Home style language). 
+          3. Only translate text descriptions. Keep numbers and hex codes exactly as they are.
+          4. Return RAW JSON ONLY.
           
-          DATA: ${JSON.stringify(data)}` 
+          JSON TO TRANSLATE: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -172,7 +172,7 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
 
     return JSON.parse(response.text || '{}') as InsightData;
   } catch (error) {
-    console.error("Translation fail:", error);
+    console.error("Translation Engine Fail:", error);
     return data;
   }
 };
@@ -184,12 +184,12 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's preferred language using simple home-style words.`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's selected local language script or simple English.`
       }
     });
     return response.text || "...";
   } catch (error) {
-    return "Error.";
+    return "Something went wrong.";
   }
 };
 
@@ -199,9 +199,9 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: { parts: [{ text: `Summarize this week simply:\n${historyText}` }] },
+      contents: { parts: [{ text: `Summarize this week in very simple terms:\n${historyText}` }] },
       config: { 
-        systemInstruction: "Create a simple weekly summary in JSON. Use plain language and native script if possible.", 
+        systemInstruction: "Create a simple weekly summary in JSON. Use plain, easy language.", 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

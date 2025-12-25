@@ -18,10 +18,10 @@ const UI_LABELS: Record<Language, Record<string, string>> = {
   en: {
     soul: 'Feelings', mind: 'Thinking', guidance: 'Tips',
     stress: 'Stress / Worry', calm: 'Peace / Calm', fatigue: 'Tiredness',
-    focus: 'Focus', alertness: 'Energy', overthinking: 'Overthinking',
+    focus: 'Focus', alertness: 'Energy', overthinking: 'Too much thinking',
     coreSignal: 'Your Mood', hiddenRealization: 'A Deep Thought',
-    dailyAction: 'Today\'s Task', sanctuary: 'Relax Now', back: 'Go Back',
-    talking: 'Talk to Kosha', translating: 'Translating...'
+    dailyAction: 'Small Task Today', sanctuary: 'Relax Now', back: 'Go Back',
+    talking: 'Talk to Kosha', translating: 'Changing language...'
   },
   te: {
     soul: 'మనసు', mind: 'ఆలోచన', guidance: 'సలహాలు',
@@ -35,7 +35,7 @@ const UI_LABELS: Record<Language, Record<string, string>> = {
     soul: 'मन की स्थिति', mind: 'सोच', guidance: 'सुझाव',
     stress: 'तनाव / चिंता', calm: 'शांति', fatigue: 'थकान',
     focus: 'ध्यान', alertness: 'स्फूर्ति', overthinking: 'ज़्यादा सोच',
-    coreSignal: 'आपका मिजाज', hiddenRealization: 'गहरी बात',
+    coreSignal: 'आपका मिजाज', hiddenRealization: 'एक गहरी बात',
     dailyAction: 'आज का काम', sanctuary: 'आराम करें', back: 'पीछे',
     talking: 'कोषा से बात करें', translating: 'अनुवाद हो रहा है...'
   },
@@ -44,7 +44,7 @@ const UI_LABELS: Record<Language, Record<string, string>> = {
     stress: 'மன அழுத்தம்', calm: 'அமைதி', fatigue: 'சோர்வு',
     focus: 'கவனம்', alertness: 'சுறுசுறுப்பு', overthinking: 'அதிக சிந்தனை',
     coreSignal: 'உங்கள் நிலை', hiddenRealization: 'முக்கிய விஷயம்',
-    dailyAction: 'இன்றைய வேலை', sanctuary: 'ஓய்வு', back: 'பின்னால்',
+    dailyAction: 'இன்றைய வேலை', sanctuary: 'ஓய்வு எடுங்கள்', back: 'பின்னால்',
     talking: 'கோஷாவுடன் பேசுங்கள்', translating: 'மொழிமாற்றம்...'
   },
   kn: {
@@ -52,7 +52,7 @@ const UI_LABELS: Record<Language, Record<string, string>> = {
     stress: 'ಒತ್ತಡ / ಚಿಂತೆ', calm: 'ನೆಮ್ಮದಿ', fatigue: 'ಆಯಾಸ',
     focus: 'ಗಮನ', alertness: 'ಉತ್ಸಾಹ', overthinking: 'ಹೆಚ್ಚು ಯೋಚನೆ',
     coreSignal: 'ನಿಮ್ಮ ಸ್ಥಿತಿ', hiddenRealization: 'ಮುಖ್ಯ ಮಾತು',
-    dailyAction: 'ಇಂದಿನ ಕೆಲಸ', sanctuary: 'ವಿಶ್ರಾಂತಿ', back: 'ಹಿಂದಕ್ಕೆ',
+    dailyAction: 'ಇಂದಿನ ಕೆಲಸ', sanctuary: 'ವಿಶ್ರಾಂತಿ ಪಡೆಯಿರಿ', back: 'ಹಿಂದಕ್ಕೆ',
     talking: 'ಕೋಷಾ ಜೊತೆ ಮಾತನಾಡಿ', translating: 'ಅನುವಾದವಾಗುತ್ತಿದೆ...'
   }
 };
@@ -116,8 +116,8 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
       <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-8">
         <div className="relative overflow-hidden glass-card rounded-[3rem] p-12 text-center border-amber-500/20">
           <h1 className="text-2xl font-serif-display italic text-white mb-6">Error</h1>
-          <p className="text-zinc-400 text-sm italic mb-10 leading-relaxed">Could not find a face. Please use better lighting.</p>
-          <Button onClick={onReset} fullWidth>Retry</Button>
+          <p className="text-zinc-400 text-sm italic mb-10 leading-relaxed">Could not find a face. Please show your face better in good light.</p>
+          <Button onClick={onReset} fullWidth>Try Again</Button>
         </div>
       </div>
     );
@@ -127,7 +127,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ data, onReset, onChat,
     <div className="w-full max-w-lg animate-slide-up px-2 sm:px-0 pb-12 relative">
       <div className="absolute inset-0 pointer-events-none opacity-50 blur-[120px] z-0" style={auraStyle}></div>
 
-      {/* Language Selector in Native Script */}
+      {/* Language Selection: Native scripts only */}
       <div className="relative z-30 flex justify-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2 px-4">
         {languages.map((l) => (
           <button
