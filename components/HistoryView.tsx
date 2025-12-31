@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getJournal, clearJournal } from '../services/storageService';
 import { JournalEntry, WeeklyInsight } from '../types';
@@ -46,17 +47,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
     }
   };
 
-  const getContextLabel = (ctx: string) => {
-    const map: Record<string, string> = {
-      'WAKING_UP': 'Morning',
-      'WORK': 'Work',
-      'FAMILY': 'Family',
-      'SOCIAL': 'Friends',
-      'BEFORE_SLEEP': 'Night'
-    };
-    return map[ctx] || ctx;
-  };
-
   const grouped = entries.reduce((acc, entry) => {
     const day = `Day ${entry.dayNumber}`;
     if (!acc[day]) acc[day] = [];
@@ -81,7 +71,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                <img src={selectedEntry.image} alt="Recorded mood" className="w-full h-full object-cover" />
                <div className="absolute bottom-8 left-8 text-white">
-                 <div className="font-serif-display text-3xl mb-1 italic">"{getContextLabel(selectedEntry.context)}"</div>
                  <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
                    {new Date(selectedEntry.timestamp).toLocaleString([], {
                      weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -216,9 +205,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
                     className="w-full text-left p-6 bg-white/[0.03] border border-white/5 rounded-3xl hover:bg-white/[0.07] transition-all hover:border-white/10 group relative overflow-hidden backdrop-blur-3xl"
                   >
                     <div className="flex justify-between items-center mb-3">
-                       <span className="text-[9px] font-black tracking-[0.2em] text-indigo-400 uppercase">
-                         {getContextLabel(entry.context)}
-                       </span>
                        <span className="text-[9px] text-zinc-600 font-black tracking-widest">
                          {new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                        </span>

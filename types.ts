@@ -1,7 +1,6 @@
 
 export enum AppState {
   INTRO = 'INTRO',
-  CONTEXT_SELECT = 'CONTEXT_SELECT',
   VISION_ANALYSIS = 'VISION_ANALYSIS',
   LOADING = 'LOADING',
   RESULT = 'RESULT',
@@ -14,7 +13,7 @@ export enum AppState {
 
 export type Language = 'en' | 'hi' | 'te' | 'ta' | 'kn';
 
-export type UserContext = 'WAKING_UP' | 'WORK' | 'EVENING' | 'BEFORE_SLEEP';
+export type UserContext = 'CURRENT';
 
 export interface EmotionalMetrics {
   stress: number;

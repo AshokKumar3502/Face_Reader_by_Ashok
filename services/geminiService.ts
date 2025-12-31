@@ -6,22 +6,25 @@ import { getSettings } from "./storageService";
 const SYSTEM_INSTRUCTION = `
 You are Kosha, a simple and friendly soul mirror. Your goal is to help users understand their mood using very easy words.
 
-**LANGUAGE RULES:**
-1. **English Mode**: Use ONLY English. Keep it very simple (grade 4 level).
-2. **Local Languages (Telugu, Hindi, Tamil, Kannada)**: 
-   - You MUST use the NATIVE SCRIPT of that language (e.g., తెలుగు for Telugu, हिन्दी for Hindi). 
-   - DO NOT use English letters to write local words (No transliteration).
-   - Use "Vaduka Bhasha" (Spoken style). Avoid formal or bookish language.
-   - Use words used in daily home conversations.
+**STRICT LANGUAGE RULES:**
+1. **English (en)**: Use ONLY simple English. No other languages.
+2. **Telugu (te)**: Use ONLY Telugu script (తెలుగు). Use simple daily home words ("Vaduka Bhasha"). NO English letters.
+3. **Hindi (hi)**: Use ONLY Devanagari script (हिन्दी). Use simple spoken words. NO English letters.
+4. **Tamil (ta)**: Use ONLY Tamil script (தமிழ்). NO English letters.
+5. **Kannada (kn)**: Use ONLY Kannada script (ಕನ್ನಡ). NO English letters.
+
+**SIMPLE LANGUAGE (ALL LANGUAGES):**
+- Speak like a close friend.
+- Avoid academic, scientific, or bookish terms.
+- Use words that are clear to a child or an elderly person.
 
 **OUTPUT FORMAT:**
-- All descriptive text fields in the JSON (psychProfile, simpleExplanation, dailyAction, hiddenRealization, growthPlan, etc.) must be in the chosen language's native script.
-- Keep numbers as numbers.
-- Keep aura colors as hex codes.
+- All descriptive text fields in the JSON (psychProfile, simpleExplanation, dailyAction, hiddenRealization, etc.) must be in the chosen language's script.
+- Return RAW JSON ONLY.
 
 **VISUAL ANALYSIS:**
-- Be empathetic. If you see a face, even if lighting is bad, try to give a helpful and warm reflection.
-- Only say "Human not found" if the image is clearly empty.
+- Be warm and empathetic. If you see even a suggestion of a face, reflect it kindly.
+- If it's just an object or empty, set "isHuman: false".
 `;
 
 const RESPONSE_SCHEMA = {
@@ -108,7 +111,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current situation: ${context}. Tell me how I am feeling in very simple words. Respond in JSON.` }
+    { text: `Current situation: Simple observation of the person right now. Tell me how I am feeling in very simple words. Respond in JSON.` }
   ];
 
   if (audio) {
@@ -153,15 +156,15 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
       model: MODEL_NAME,
       contents: { 
         parts: [{ 
-          text: `Translate the descriptions in this JSON into simple, common, everyday spoken ${langMap[targetLanguage]}.
+          text: `Translate ALL text descriptions in this JSON into simple, home-style spoken ${langMap[targetLanguage]}.
           
           MANDATORY RULES:
-          1. Use NATIVE SCRIPT for the language. Do not use English alphabet.
-          2. Use simple "Vaduka Bhasha" (Home style language). 
-          3. Only translate text descriptions. Keep numbers and hex codes exactly as they are.
+          1. Use NATIVE SCRIPT ONLY. (e.g. for Telugu use తెలుగు script). 
+          2. No English alphabet for the local language.
+          3. Keep it simple and friendly.
           4. Return RAW JSON ONLY.
           
-          JSON TO TRANSLATE: ${JSON.stringify(data)}` 
+          DATA: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -172,7 +175,7 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
 
     return JSON.parse(response.text || '{}') as InsightData;
   } catch (error) {
-    console.error("Translation Engine Fail:", error);
+    console.error("Translation Fail:", error);
     return data;
   }
 };
@@ -184,12 +187,12 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
       model: MODEL_NAME,
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's selected local language script or simple English.`
+        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's selected language's native script using very simple words.`
       }
     });
     return response.text || "...";
   } catch (error) {
-    return "Something went wrong.";
+    return "Error.";
   }
 };
 

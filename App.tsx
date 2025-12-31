@@ -15,7 +15,6 @@ import { saveEntry } from './services/storageService';
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INTRO);
   const [insight, setInsight] = useState<InsightData | null>(null);
-  const [context, setContext] = useState<UserContext>('WAKING_UP');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAnalysis = async (image: string, day?: number, audio?: string) => {
@@ -30,10 +29,10 @@ const App: React.FC = () => {
     }, 30000);
 
     try {
-      const data = await analyzeInput(image, context, audio);
+      const data = await analyzeInput(image, 'CURRENT', audio);
       clearTimeout(timeout);
       setInsight(data);
-      if (data.isHuman) saveEntry(context, data, image, day);
+      if (data.isHuman) saveEntry('CURRENT', data, image, day);
       setAppState(AppState.RESULT);
     } catch (e: any) {
       clearTimeout(timeout);
@@ -50,7 +49,7 @@ const App: React.FC = () => {
     }, 45000);
   };
 
-  const showSettings = (appState === AppState.INTRO || appState === AppState.RESULT || appState === AppState.CONTEXT_SELECT);
+  const showSettings = (appState === AppState.INTRO || appState === AppState.RESULT);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#08080a]">
@@ -68,7 +67,7 @@ const App: React.FC = () => {
       {appState === AppState.LOADING && <LoadingScreen />}
 
       <main className="z-10 w-full max-w-lg flex flex-col items-center justify-center">
-        {(appState === AppState.INTRO || appState === AppState.CONTEXT_SELECT || appState === AppState.SANCTUARY) && (
+        {(appState === AppState.INTRO || appState === AppState.SANCTUARY) && (
           <div className="mb-10 transition-all duration-1000">
             <Visualizer state={appState === AppState.SANCTUARY ? 'breathing' : (appState === AppState.INTRO ? 'idle' : 'peaceful')} />
           </div>
@@ -89,26 +88,13 @@ const App: React.FC = () => {
               <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">Simple mirror for your mind</p>
             </div>
             <div className="space-y-4 w-full max-w-xs mx-auto">
-              <Button onClick={() => setAppState(AppState.CONTEXT_SELECT)} fullWidth className="py-6">Start Thinking</Button>
+              <Button onClick={() => setAppState(AppState.VISION_ANALYSIS)} fullWidth className="py-6">How do I feel now?</Button>
               <Button variant="ghost" onClick={() => setAppState(AppState.HISTORY)} fullWidth>See Past Days</Button>
             </div>
           </div>
         )}
 
-        {appState === AppState.CONTEXT_SELECT && (
-          <div className="w-full glass-card p-10 rounded-[3.5rem] animate-slide-up border border-white/5 shadow-2xl">
-            <h2 className="text-3xl font-serif-display text-white text-center mb-10 italic">What are you doing?</h2>
-            <div className="grid gap-4">
-              <Button variant="secondary" onClick={() => { setContext('WAKING_UP'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Just woke up</Button>
-              <Button variant="secondary" onClick={() => { setContext('WORK'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Working now</Button>
-              <Button variant="secondary" onClick={() => { setContext('EVENING'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Relaxing evening</Button>
-              <Button variant="secondary" onClick={() => { setContext('BEFORE_SLEEP'); setAppState(AppState.VISION_ANALYSIS); }} fullWidth>Going to sleep</Button>
-            </div>
-            <button onClick={() => setAppState(AppState.INTRO)} className="w-full mt-8 text-[9px] font-black text-white/20 uppercase tracking-widest">Cancel</button>
-          </div>
-        )}
-
-        {appState === AppState.VISION_ANALYSIS && <VisionMode context={context} onCapture={handleAnalysis} onCancel={() => setAppState(AppState.CONTEXT_SELECT)} />}
+        {appState === AppState.VISION_ANALYSIS && <VisionMode context={'CURRENT'} onCapture={handleAnalysis} onCancel={() => setAppState(AppState.INTRO)} />}
         
         {appState === AppState.RESULT && insight && (
           <InsightCard 
