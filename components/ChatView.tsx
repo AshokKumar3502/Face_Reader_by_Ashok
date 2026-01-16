@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { InsightData, ChatMessage } from '../types';
 import { Button } from './Button';
@@ -16,10 +17,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ insight, onBack }) => {
 
   // Initialize with a welcome message from the AI based on the insight
   useEffect(() => {
+    // Fixed: insight.currentPattern was undefined, using behavioralInsight.tone instead.
     setMessages([
       {
         role: 'model',
-        text: `I've analyzed your expression. You seem to be feeling "${insight.currentPattern}". Do you want to talk about what's on your mind?`
+        text: `I've analyzed your expression. Your tone seems to be "${insight.behavioralInsight.tone}". Do you want to talk about what's on your mind?`
       }
     ]);
   }, [insight]);

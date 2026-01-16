@@ -1,34 +1,38 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kosha</title>
+    <title>Kosha | Professional Behavioral Mentor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-color: #08080a;
+        --bg-color: #020203;
+        --perspective: 1500px;
       }
       body {
         background-color: var(--bg-color);
-        /* Hyper-vibrant mesh gradient background */
         background-image: 
-          radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
-          radial-gradient(at 0% 100%, hsla(339,49%,30%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 100%, hsla(225,39%,30%,1) 0, transparent 50%);
+          radial-gradient(at 0% 0%, hsla(220, 30%, 10%, 1) 0, transparent 50%), 
+          radial-gradient(at 100% 0%, hsla(260, 40%, 12%, 1) 0, transparent 50%),
+          radial-gradient(at 50% 100%, hsla(210, 50%, 8%, 1) 0, transparent 100%);
         background-attachment: fixed;
         color: #f4f4f5;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Plus Jakarta Sans', sans-serif;
         overflow-x: hidden;
+        perspective: var(--perspective);
         -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
       }
       
+      #root {
+        transform-style: preserve-3d;
+        min-height: 100vh;
+      }
+
       .bg-noise {
         position: fixed;
         top: 0;
@@ -37,7 +41,7 @@
         height: 100vh;
         pointer-events: none;
         z-index: 50;
-        opacity: 0.05;
+        opacity: 0.02;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
       }
 
@@ -45,52 +49,23 @@
         font-family: 'Lora', serif;
       }
 
-      /* Animations */
-      .animate-fade-in {
-        animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-      }
-      .animate-slide-up {
-        animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-      }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; filter: blur(4px); }
-        to { opacity: 1; filter: blur(0); }
-      }
-      @keyframes slideUp {
-        from { opacity: 0; transform: translateY(15px); filter: blur(2px); }
-        to { opacity: 1; transform: translateY(0); filter: blur(0); }
+      @keyframes float-3d {
+        0%, 100% { transform: translateZ(10px) rotateX(0deg) rotateY(0deg); }
+        50% { transform: translateZ(30px) rotateX(2deg) rotateY(2deg); }
       }
 
-      /* Rainbow Shimmer for Buttons */
-      @keyframes shimmer-rainbow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+      .glass-panel-3d {
+        background: rgba(255, 255, 255, 0.015);
+        backdrop-filter: blur(50px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 
+          0 30px 60px -15px rgba(0, 0, 0, 0.9),
+          inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        transform-style: preserve-3d;
       }
 
-      .rainbow-gradient {
-        background: linear-gradient(
-          45deg, 
-          #f06, 
-          #9f6, 
-          #0cf, 
-          #f06
-        );
-        background-size: 300% 300%;
-        animation: shimmer-rainbow 6s ease infinite;
-      }
-
-      .drop-shadow-glow {
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
-      }
-      
-      .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {

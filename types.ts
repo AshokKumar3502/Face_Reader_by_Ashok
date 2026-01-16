@@ -13,54 +13,39 @@ export enum AppState {
 
 export type Language = 'en' | 'hi' | 'te' | 'ta' | 'kn';
 
-export type UserContext = 'CURRENT';
+export type UserContext = 'MORNING' | 'MIDDAY' | 'EVENING' | 'CURRENT';
 
-export interface EmotionalMetrics {
-  stress: number;
-  calmness: number;
-  anxiety: number;
-  fatigue: number;
-  stability: number;
+export interface WorkplaceMetrics {
+  greeting: number;
+  listening: number;
+  professionalism: number;
+  conflictResolution: number;
+  patience: number;
 }
 
-export interface CognitiveMetrics {
-  focus: number;
-  burnout: number;
-  alertness: number;
-  overthinking: number;
-}
-
-export interface StressTrigger {
-  type: string;
-  impact: 'High' | 'Medium' | 'Subtle';
-  description: string;
-}
-
-export interface BehavioralProtocol {
-  type: 'BREATH' | 'REST' | 'SOCIAL' | 'FOCUS' | 'JOURNAL';
-  title: string;
-  instruction: string;
-  duration?: string;
+export interface BehavioralInsight {
+  tone: 'Polite' | 'Aggressive' | 'Neutral' | 'Professional';
+  trendVsYesterday: string;
+  improvementArea: string;
+  positiveReinforcement: string;
+  practicalTip: string;
 }
 
 export interface InsightData {
   isHuman: boolean;
-  psychProfile: string;
+  psychProfile: string; // Brief behavioral summary
   simpleExplanation: string;
   neuralEvidence: string;
   confidenceScore: number;
-  relationshipImpact: string;
-  currentPattern: string;
-  growthPlan: string;
-  dailyAction: string;
-  emotionalScore: number;
-  hiddenRealization: string;
-  decisionCompass: string;
-  vitals: EmotionalMetrics;
-  cognitive: CognitiveMetrics;
-  stressTriggers: StressTrigger[];
-  behavioralProtocols: BehavioralProtocol[];
+  workplaceMetrics: WorkplaceMetrics;
+  behavioralInsight: BehavioralInsight;
   auraColors: string[];
+  vitals: {
+    stress: number;
+    calmness: number;
+    anxiety: number;
+    fatigue: number;
+  };
 }
 
 export interface WeeklyInsight {

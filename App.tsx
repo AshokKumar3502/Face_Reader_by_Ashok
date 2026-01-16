@@ -15,105 +15,73 @@ import { saveEntry } from './services/storageService';
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.INTRO);
   const [insight, setInsight] = useState<InsightData | null>(null);
+  const [selectedContext, setSelectedContext] = useState<UserContext>('CURRENT');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAnalysis = async (image: string, day?: number, audio?: string) => {
     setAppState(AppState.LOADING);
     setErrorMessage(null);
-    
-    const timeout = setTimeout(() => {
-      if (appState === AppState.LOADING) {
-        setErrorMessage("Connection lost. Please try again.");
-        setAppState(AppState.ERROR);
-      }
-    }, 30000);
-
     try {
-      const data = await analyzeInput(image, 'CURRENT', audio);
-      clearTimeout(timeout);
+      const data = await analyzeInput(image, selectedContext, audio);
       setInsight(data);
-      if (data.isHuman) saveEntry('CURRENT', data, image, day);
+      if (data.isHuman) saveEntry(selectedContext, data, image, day);
       setAppState(AppState.RESULT);
     } catch (e: any) {
-      clearTimeout(timeout);
       console.error(e);
-      setErrorMessage("Sorry, I can't connect right now.");
+      setErrorMessage("Something went wrong. Let's try again.");
       setAppState(AppState.ERROR);
     }
   };
 
-  const startSanctuary = () => {
-    setAppState(AppState.SANCTUARY);
-    setTimeout(() => {
-      if (appState === AppState.SANCTUARY) setAppState(AppState.RESULT);
-    }, 45000);
+  const startCheckIn = (ctx: UserContext) => {
+    setSelectedContext(ctx);
+    setAppState(AppState.VISION_ANALYSIS);
   };
 
-  const showSettings = (appState === AppState.INTRO || appState === AppState.RESULT);
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#08080a]">
-      <div className="bg-noise pointer-events-none opacity-10"></div>
-
-      {showSettings && (
-        <button 
-          onClick={() => setAppState(AppState.SETTINGS)}
-          className="fixed top-8 right-8 z-[60] w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
-      )}
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#020203]">
+      <div className="bg-noise"></div>
 
       {appState === AppState.LOADING && <LoadingScreen />}
 
-      <main className="z-10 w-full max-w-lg flex flex-col items-center justify-center">
-        {(appState === AppState.INTRO || appState === AppState.SANCTUARY) && (
-          <div className="mb-10 transition-all duration-1000">
-            <Visualizer state={appState === AppState.SANCTUARY ? 'breathing' : (appState === AppState.INTRO ? 'idle' : 'peaceful')} />
-          </div>
-        )}
-
-        {appState === AppState.SANCTUARY && (
-          <div className="text-center animate-fade-in">
-             <h2 className="text-4xl font-serif-display text-white italic mb-6">Relax</h2>
-             <p className="text-zinc-500 text-[10px] uppercase tracking-[0.5em] mb-12">Breathe with the light</p>
-             <Button variant="ghost" onClick={() => setAppState(AppState.RESULT)}>Back</Button>
-          </div>
-        )}
-
+      <main className="z-10 w-full max-w-2xl flex flex-col items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+        
         {appState === AppState.INTRO && (
-          <div className="text-center animate-slide-up space-y-16 py-10">
-            <div className="space-y-4">
-              <h1 className="text-7xl font-serif-display text-white italic tracking-tighter drop-shadow-2xl">Kosha.</h1>
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">Simple mirror for your mind</p>
+          <div className="flex flex-col items-center animate-entrance-3d">
+            <div className="mb-14">
+              <Visualizer state="idle" />
             </div>
-            <div className="space-y-4 w-full max-w-xs mx-auto">
-              <Button onClick={() => setAppState(AppState.VISION_ANALYSIS)} fullWidth className="py-6">How do I feel now?</Button>
-              <Button variant="ghost" onClick={() => setAppState(AppState.HISTORY)} fullWidth>See Past Days</Button>
+            
+            <div className="text-center space-y-4 mb-16" style={{ transform: 'translateZ(40px)' }}>
+              <h1 className="text-7xl font-serif-display text-white italic tracking-tighter drop-shadow-2xl">Kosha.</h1>
+              <p className="text-white/20 text-[10px] font-bold uppercase tracking-[0.8em] ml-[0.8em]">Workplace Behavioral Mentor</p>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4 w-full max-w-xs mx-auto" style={{ transform: 'translateZ(60px)' }}>
+              <Button onClick={() => startCheckIn('MORNING')} fullWidth className="py-6 text-[10px] bg-white/5 border-white/5">Morning Check-in</Button>
+              <Button onClick={() => startCheckIn('MIDDAY')} fullWidth className="py-6 text-[10px] bg-white/5 border-white/5">Mid-day Sync</Button>
+              <Button onClick={() => startCheckIn('EVENING')} fullWidth className="py-6 text-[10px] bg-white/5 border-white/5">End of Day Report</Button>
+              <button onClick={() => setAppState(AppState.HISTORY)} className="mt-8 text-zinc-600 hover:text-zinc-300 text-[10px] font-bold uppercase tracking-[0.4em] transition-colors">See Past Growth</button>
             </div>
           </div>
         )}
 
-        {appState === AppState.VISION_ANALYSIS && <VisionMode context={'CURRENT'} onCapture={handleAnalysis} onCancel={() => setAppState(AppState.INTRO)} />}
+        {appState === AppState.VISION_ANALYSIS && (
+          <VisionMode context={selectedContext} onCapture={handleAnalysis} onCancel={() => setAppState(AppState.INTRO)} />
+        )}
         
         {appState === AppState.RESULT && insight && (
-          <InsightCard 
-            data={insight} 
-            onReset={() => setAppState(AppState.INTRO)} 
-            onChat={() => setAppState(AppState.CHAT)} 
-            onSanctuary={startSanctuary} 
-          />
+          <InsightCard data={insight} onReset={() => setAppState(AppState.INTRO)} onChat={() => setAppState(AppState.CHAT)} />
         )}
         
         {appState === AppState.HISTORY && <HistoryView onBack={() => setAppState(AppState.INTRO)} />}
-        {appState === AppState.SETTINGS && <SettingsView onBack={() => setAppState(AppState.INTRO)} />}
         {appState === AppState.CHAT && insight && <ChatView insight={insight} onBack={() => setAppState(AppState.RESULT)} />}
         
         {appState === AppState.ERROR && (
-           <div className="w-full max-w-sm glass-card p-12 rounded-[3rem] text-center">
-              <h2 className="text-2xl font-serif-display text-white italic mb-4">Error</h2>
-              <p className="text-zinc-500 text-xs mb-10">{errorMessage || "Something went wrong."}</p>
-              <Button onClick={() => setAppState(AppState.INTRO)} fullWidth>Go Back</Button>
+           <div className="w-full max-w-md glass-panel-3d p-12 rounded-[3rem] text-center">
+              <h2 className="text-xl font-serif-display text-white italic mb-4">Sync Error</h2>
+              <p className="text-zinc-500 text-sm mb-10 italic">{errorMessage}</p>
+              <Button onClick={() => setAppState(AppState.INTRO)} fullWidth variant="secondary">Go Back</Button>
            </div>
         )}
       </main>

@@ -1,47 +1,62 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { InsightData, UserContext, ChatMessage, JournalEntry, WeeklyInsight, Language } from "../types";
-import { getSettings } from "./storageService";
+import { getSettings, getJournal } from "./storageService";
 
 const SYSTEM_INSTRUCTION = `
-You are Kosha, a simple and friendly soul mirror. Your goal is to help users understand their mood using very easy words.
+You are the Workplace Behavioral Architect. You are a calm, kind mentor.
+Your goal: Help users behave better in the office.
 
-**STRICT LANGUAGE RULES:**
-1. **English (en)**: Use ONLY simple English. No other languages.
-2. **Telugu (te)**: Use ONLY Telugu script (తెలుగు). Use simple daily home words ("Vaduka Bhasha"). NO English letters.
-3. **Hindi (hi)**: Use ONLY Devanagari script (हिन्दी). Use simple spoken words. NO English letters.
-4. **Tamil (ta)**: Use ONLY Tamil script (தமிழ்). NO English letters.
-5. **Kannada (kn)**: Use ONLY Kannada script (ಕನ್ನಡ). NO English letters.
+**SIMPLE ENGLISH RULE:**
+- Use ONLY very simple English (Grade 4 level).
+- No big corporate words.
+- Be clear, supportive, and non-judgmental.
 
-**SIMPLE LANGUAGE (ALL LANGUAGES):**
-- Speak like a close friend.
-- Avoid academic, scientific, or bookish terms.
-- Use words that are clear to a child or an elderly person.
+**CORE TASKS:**
+1. Analyze if the user is polite, aggressive, or professional.
+2. Score their Greeting, Listening, and Patience (0-100).
+3. Give 1 tiny tip for work.
+4. Give 1 nice thought.
+5. Compare today to their last 3 days of work. Tell them how they are improving in simple words.
 
-**OUTPUT FORMAT:**
-- All descriptive text fields in the JSON (psychProfile, simpleExplanation, dailyAction, hiddenRealization, etc.) must be in the chosen language's script.
-- Return RAW JSON ONLY.
+**LOCAL LANGUAGE RULE:**
+- If the user picks a local language (te, hi, ta, kn), use ONLY that language's NATIVE SCRIPT.
+- Use simple home-style words.
 
-**VISUAL ANALYSIS:**
-- Be warm and empathetic. If you see even a suggestion of a face, reflect it kindly.
-- If it's just an object or empty, set "isHuman: false".
+**OUTPUT:**
+- Return RAW JSON ONLY. No extra text.
 `;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     isHuman: { type: Type.BOOLEAN },
-    psychProfile: { type: Type.STRING },
+    psychProfile: { type: Type.STRING, description: "A very simple summary of how the person acts at work." },
     simpleExplanation: { type: Type.STRING },
     neuralEvidence: { type: Type.STRING },
     confidenceScore: { type: Type.INTEGER },
-    hiddenRealization: { type: Type.STRING },
-    decisionCompass: { type: Type.STRING },
-    relationshipImpact: { type: Type.STRING },
-    currentPattern: { type: Type.STRING },
-    growthPlan: { type: Type.STRING },
-    dailyAction: { type: Type.STRING },
-    emotionalScore: { type: Type.INTEGER },
+    workplaceMetrics: {
+      type: Type.OBJECT,
+      properties: {
+        greeting: { type: Type.INTEGER },
+        listening: { type: Type.INTEGER },
+        professionalism: { type: Type.INTEGER },
+        conflictResolution: { type: Type.INTEGER },
+        patience: { type: Type.INTEGER }
+      },
+      required: ["greeting", "listening", "professionalism", "conflictResolution", "patience"]
+    },
+    behavioralInsight: {
+      type: Type.OBJECT,
+      properties: {
+        tone: { type: Type.STRING, enum: ["Polite", "Aggressive", "Neutral", "Professional"] },
+        trendVsYesterday: { type: Type.STRING },
+        improvementArea: { type: Type.STRING },
+        positiveReinforcement: { type: Type.STRING },
+        practicalTip: { type: Type.STRING }
+      },
+      required: ["tone", "trendVsYesterday", "improvementArea", "positiveReinforcement", "practicalTip"]
+    },
     auraColors: { type: Type.ARRAY, items: { type: Type.STRING } },
     vitals: {
       type: Type.OBJECT,
@@ -49,69 +64,40 @@ const RESPONSE_SCHEMA = {
         stress: { type: Type.INTEGER },
         calmness: { type: Type.INTEGER },
         anxiety: { type: Type.INTEGER },
-        fatigue: { type: Type.INTEGER },
-        stability: { type: Type.INTEGER }
+        fatigue: { type: Type.INTEGER }
       },
-      required: ["stress", "calmness", "anxiety", "fatigue", "stability"]
-    },
-    cognitive: {
-      type: Type.OBJECT,
-      properties: {
-        focus: { type: Type.INTEGER },
-        burnout: { type: Type.INTEGER },
-        alertness: { type: Type.INTEGER },
-        overthinking: { type: Type.INTEGER }
-      },
-      required: ["focus", "burnout", "alertness", "overthinking"]
-    },
-    stressTriggers: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          type: { type: Type.STRING },
-          impact: { type: Type.STRING, enum: ["High", "Medium", "Subtle"] },
-          description: { type: Type.STRING }
-        },
-        required: ["type", "impact", "description"]
-      }
-    },
-    behavioralProtocols: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          type: { type: Type.STRING, enum: ["BREATH", "REST", "SOCIAL", "FOCUS", "JOURNAL"] },
-          title: { type: Type.STRING },
-          instruction: { type: Type.STRING },
-          duration: { type: Type.STRING }
-        },
-        required: ["type", "title", "instruction"]
-      }
+      required: ["stress", "calmness", "anxiety", "fatigue"]
     }
   },
-  required: [
-    "isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "hiddenRealization", 
-    "decisionCompass", "relationshipImpact", "currentPattern", "growthPlan", 
-    "dailyAction", "emotionalScore", "vitals", "cognitive", "stressTriggers", "behavioralProtocols", "auraColors"
-  ]
+  required: ["isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "workplaceMetrics", "behavioralInsight", "auraColors", "vitals"]
 };
 
-const MODEL_NAME = 'gemini-3-flash-preview';
-
+// Initializes the Gemini AI client using the API key from environment or settings.
 const getAiClient = () => {
   const settings = getSettings();
   const apiKey = settings.manualApiKey || process.env.API_KEY || '';
   return new GoogleGenAI({ apiKey });
 };
 
+// Analyzes user input (image, audio) and context to provide behavioral insights.
 export const analyzeInput = async (image: string, context: UserContext, audio?: string): Promise<InsightData> => {
   const ai = getAiClient();
   const base64Image = image.split(',')[1] || image;
   
+  const history = getJournal().slice(-5);
+  const historyText = history.map(h => `[Date: ${new Date(h.timestamp).toDateString()}] Note: ${h.insight.psychProfile}`).join("\n");
+
   const parts: any[] = [
     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-    { text: `Current situation: Simple observation of the person right now. Tell me how I am feeling in very simple words. Respond in JSON.` }
+    { text: `Workplace Context: ${context}. 
+    History for 3-day trend check:
+    ${historyText}
+    
+    Task: Look at the face and voice.
+    1. Score Greeting, Listening, and Patience.
+    2. How does today compare to the last 3 days? Use simple words.
+    3. Give a simple tip for office behavior.
+    Respond in JSON only.` }
   ];
 
   if (audio) {
@@ -121,7 +107,7 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
 
   try {
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: 'gemini-3-flash-preview',
       contents: { parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -130,41 +116,24 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
       }
     });
 
-    if (!response.text) throw new Error("SIGNAL_TIMEOUT");
+    if (!response.text) throw new Error("TIMEOUT");
     return JSON.parse(response.text) as InsightData;
   } catch (error: any) {
-    console.error("Analysis Fail:", error);
+    console.error("AI Error:", error);
     throw error;
   }
 };
 
+// Translates the behavioral insight data into the specified language.
 export const translateInsight = async (data: InsightData, targetLanguage: Language): Promise<InsightData> => {
   if (targetLanguage === 'en') return data;
-  
-  const langMap: Record<Language, string> = {
-    hi: 'Hindi (हिन्दी)',
-    te: 'Telugu (తెలుగు)',
-    ta: 'Tamil (தமிழ்)',
-    kn: 'Kannada (ಕನ್ನಡ)',
-    en: 'English'
-  };
-
   const ai = getAiClient();
-  
   try {
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: 'gemini-3-flash-preview',
       contents: { 
         parts: [{ 
-          text: `Translate ALL text descriptions in this JSON into simple, home-style spoken ${langMap[targetLanguage]}.
-          
-          MANDATORY RULES:
-          1. Use NATIVE SCRIPT ONLY. (e.g. for Telugu use తెలుగు script). 
-          2. No English alphabet for the local language.
-          3. Keep it simple and friendly.
-          4. Return RAW JSON ONLY.
-          
-          DATA: ${JSON.stringify(data)}` 
+          text: `Translate ALL text in this JSON to simple ${targetLanguage}. Use native script. Simple home-style words. JSON: ${JSON.stringify(data)}` 
         }] 
       },
       config: {
@@ -172,52 +141,64 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
         responseSchema: RESPONSE_SCHEMA
       }
     });
-
     return JSON.parse(response.text || '{}') as InsightData;
-  } catch (error) {
-    console.error("Translation Fail:", error);
-    return data;
-  }
+  } catch (error) { return data; }
 };
 
+// Generates a chat response from the mentor based on conversation history.
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
   const ai = getAiClient();
   try {
     const response = await ai.models.generateContent({
-      model: MODEL_NAME,
+      model: 'gemini-3-flash-preview',
       contents: history.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] })),
       config: { 
-        systemInstruction: `${SYSTEM_INSTRUCTION}\nAlways reply in the user's selected language's native script using very simple words.`
+        systemInstruction: `You are the Workplace Mentor. Speak in very simple English. Help the user fix their behavior at work. Be kind.`
       }
     });
     return response.text || "...";
-  } catch (error) {
-    return "Error.";
-  }
+  } catch (error) { return "Sorry, I can't talk right now."; }
 };
 
+/**
+ * Generates a weekly meta-analysis report based on multiple journal entries.
+ * Uses gemini-3-pro-preview for complex reasoning tasks.
+ */
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
   const ai = getAiClient();
-  const historyText = entries.map(e => `Day ${e.dayNumber}: ${e.insight.psychProfile}`).join('\n');
-  try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: { parts: [{ text: `Summarize this week in very simple terms:\n${historyText}` }] },
-      config: { 
-        systemInstruction: "Create a simple weekly summary in JSON. Use plain, easy language.", 
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            weekTitle: { type: Type.STRING },
-            soulReport: { type: Type.STRING },
-            emotionalTrend: { type: Type.STRING },
-            keyRealization: { type: Type.STRING },
-            nextWeekMantra: { type: Type.STRING }
-          }
-        }
+  const historyText = entries.map(e => 
+    `[Day ${e.dayNumber}] ${e.insight.psychProfile} - Tone: ${e.insight.behavioralInsight.tone}`
+  ).join("\n");
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-pro-preview',
+    contents: [{ 
+      parts: [{ 
+        text: `Analyze this person's workplace behavior history and provide a summary report:
+        ${historyText}
+        
+        Requirements:
+        1. Use very simple English (Grade 4 level).
+        2. Be kind and encouraging.
+        3. Identify trends and key realizations.
+        4. Provide a supportive mantra.` 
+      }] 
+    }],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          weekTitle: { type: Type.STRING, description: "A catchy title for the week" },
+          soulReport: { type: Type.STRING, description: "A summary of the person's growth and behavior" },
+          emotionalTrend: { type: Type.STRING, description: "How their mood/tone changed over time" },
+          keyRealization: { type: Type.STRING, description: "A main lesson learned this week" },
+          nextWeekMantra: { type: Type.STRING, description: "A short positive phrase to repeat" }
+        },
+        required: ["weekTitle", "soulReport", "emotionalTrend", "keyRealization", "nextWeekMantra"]
       }
-    });
-    return JSON.parse(response.text || '{}') as WeeklyInsight;
-  } catch (error) { throw error; }
+    }
+  });
+
+  return JSON.parse(response.text || '{}') as WeeklyInsight;
 };
