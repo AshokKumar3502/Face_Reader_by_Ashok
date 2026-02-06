@@ -72,14 +72,11 @@ const RESPONSE_SCHEMA = {
   required: ["isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "workplaceMetrics", "behavioralInsight", "auraColors", "vitals"]
 };
 
-// Initializes the Gemini AI client using the API key from environment or settings.
+// Strictly uses the platform-provided API Key.
 const getAiClient = () => {
-  const settings = getSettings();
-  const apiKey = settings.manualApiKey || process.env.API_KEY || '';
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 };
 
-// Analyzes user input (image, audio) and context to provide behavioral insights.
 export const analyzeInput = async (image: string, context: UserContext, audio?: string): Promise<InsightData> => {
   const ai = getAiClient();
   const base64Image = image.split(',')[1] || image;
@@ -124,7 +121,6 @@ export const analyzeInput = async (image: string, context: UserContext, audio?: 
   }
 };
 
-// Translates the behavioral insight data into the specified language.
 export const translateInsight = async (data: InsightData, targetLanguage: Language): Promise<InsightData> => {
   if (targetLanguage === 'en') return data;
   const ai = getAiClient();
@@ -145,7 +141,6 @@ export const translateInsight = async (data: InsightData, targetLanguage: Langua
   } catch (error) { return data; }
 };
 
-// Generates a chat response from the mentor based on conversation history.
 export const getChatResponse = async (history: ChatMessage[], contextData: InsightData): Promise<string> => {
   const ai = getAiClient();
   try {
@@ -160,10 +155,6 @@ export const getChatResponse = async (history: ChatMessage[], contextData: Insig
   } catch (error) { return "Sorry, I can't talk right now."; }
 };
 
-/**
- * Generates a weekly meta-analysis report based on multiple journal entries.
- * Uses gemini-3-pro-preview for complex reasoning tasks.
- */
 export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<WeeklyInsight> => {
   const ai = getAiClient();
   const historyText = entries.map(e => 
@@ -189,11 +180,11 @@ export const generateWeeklyReport = async (entries: JournalEntry[]): Promise<Wee
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          weekTitle: { type: Type.STRING, description: "A catchy title for the week" },
-          soulReport: { type: Type.STRING, description: "A summary of the person's growth and behavior" },
-          emotionalTrend: { type: Type.STRING, description: "How their mood/tone changed over time" },
-          keyRealization: { type: Type.STRING, description: "A main lesson learned this week" },
-          nextWeekMantra: { type: Type.STRING, description: "A short positive phrase to repeat" }
+          weekTitle: { type: Type.STRING },
+          soulReport: { type: Type.STRING },
+          emotionalTrend: { type: Type.STRING },
+          keyRealization: { type: Type.STRING },
+          nextWeekMantra: { type: Type.STRING }
         },
         required: ["weekTitle", "soulReport", "emotionalTrend", "keyRealization", "nextWeekMantra"]
       }
