@@ -8,12 +8,14 @@ export interface UserSettings {
   reminderEnabled: boolean;
   reminderTime: string; // "HH:mm" 24h format
   lastNotificationDate: string | null; // "YYYY-MM-DD"
+  manualApiKey: string | null; // For users who want to provide their own
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
   reminderEnabled: false,
   reminderTime: "18:00",
   lastNotificationDate: null,
+  manualApiKey: null,
 };
 
 // --- Journal Functions ---
