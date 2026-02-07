@@ -72,9 +72,14 @@ const RESPONSE_SCHEMA = {
   required: ["isHuman", "psychProfile", "simpleExplanation", "neuralEvidence", "confidenceScore", "workplaceMetrics", "behavioralInsight", "auraColors", "vitals"]
 };
 
-// Strictly uses the platform-provided API Key.
+/**
+ * Returns a new instance of GoogleGenAI.
+ * Prioritizes manually entered key from settings, falling back to process.env.API_KEY.
+ */
 const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const settings = getSettings();
+  const apiKey = settings.manualApiKey || process.env.API_KEY || '';
+  return new GoogleGenAI({ apiKey });
 };
 
 export const analyzeInput = async (image: string, context: UserContext, audio?: string): Promise<InsightData> => {
