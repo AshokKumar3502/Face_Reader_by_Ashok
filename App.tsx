@@ -44,6 +44,23 @@ const App: React.FC = () => {
 
       {appState === AppState.LOADING && <LoadingScreen />}
 
+      {/* Persistent Navigation for Intro Screen */}
+      {appState === AppState.INTRO && (
+        <div className="fixed top-8 right-8 z-50 flex items-center gap-4 animate-fade-in">
+          <button 
+            onClick={() => setAppState(AppState.SETTINGS)}
+            className="p-3 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all hover:scale-110 active:scale-95 group shadow-2xl"
+            aria-label="Settings"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-black uppercase tracking-[0.3em] text-white whitespace-nowrap">Settings</span>
+          </button>
+        </div>
+      )}
+
       <main className="z-10 w-full max-w-2xl flex flex-col items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
         
         {appState === AppState.INTRO && (
@@ -65,19 +82,15 @@ const App: React.FC = () => {
               <div className="flex flex-col items-center gap-6 mt-10">
                 <button 
                   onClick={() => setAppState(AppState.HISTORY)} 
-                  className="text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-[0.4em] transition-colors"
+                  className="text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-[0.4em] transition-colors border-b border-transparent hover:border-white/20 pb-1"
                 >
-                  See Past Growth
+                  View My Growth Journey
                 </button>
                 <button 
                   onClick={() => setAppState(AppState.SETTINGS)} 
-                  className="text-zinc-700 hover:text-zinc-400 text-[10px] font-black uppercase tracking-[0.4em] transition-colors flex items-center gap-2"
+                  className="text-zinc-600 hover:text-zinc-300 text-[10px] font-black uppercase tracking-[0.4em] transition-colors"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                  App Settings
+                  Account & AI Configuration
                 </button>
               </div>
             </div>
